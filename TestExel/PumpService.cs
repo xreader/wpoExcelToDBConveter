@@ -19,13 +19,13 @@ namespace TestExel
                 var pump = new Pump(worksheet);
                 pump.GetNamePumpInExel("H1");
                 pump.GetTypePumpInExel("A1");
-                pump.GetData();
+                pump.GetData(6,"A","B","AC");
                 
                 if (pump != null && pump.Name != "")
                     pumps.Add(pump);
 
             }
-            RoundCOP(pumps);
+            RoundCOPAndP(pumps);
             return pumps;
         }
 
@@ -47,7 +47,7 @@ namespace TestExel
             
             return filteredData;
         }
-        public static void RoundCOP(List<Pump> pumps)
+        public static void RoundCOPAndP(List<Pump> pumps)
         {
             foreach (var pump in pumps)
             {

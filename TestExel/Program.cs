@@ -24,7 +24,7 @@ class Program
                     Console.WriteLine($"  Time: {dataPair.Key}");
                     foreach (var data in dataPair.Value)
                     {
-                        Console.WriteLine($"    Temp: {data.Temp}, HC: {data.HC}, PI: {data.PI}, COP: {data.COP}");
+                        Console.WriteLine($"    Temp: {data.Temp}, HC: {data.HC}, COP: {data.COP}");
                     }
                 }
             }
