@@ -4,7 +4,7 @@ using System.Diagnostics.Metrics;
 
 class Pump
 {
-    public string Name {get;set;}
+    public string Name { get; set;}
     public string Type{ get;set;}
     public Dictionary<int, List<DataPump>> Data { get; set; }
     private IXLWorksheet _sheet;

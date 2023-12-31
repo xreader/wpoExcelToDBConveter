@@ -1,14 +1,105 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using TestExel.StandartModels;
 
 namespace TestExel
 {
     internal class PumpService
     {
+
+        //метод сейчас только копирует значения и переносит их в стандарт,
+        //при условии что температура на улице уже есть такая в старой моделе и температура внутри тоже есть при такой температуре на улице
+        //и пока только для теплого климата
+        public List<StandartPump> Test(XLWorkbook workbook, int[] outTemps, int[] flowTemp)
+        {
+            List<Pump> oldPumps = GetAllPumpsWithBasicTemp(workbook); // Предположим, у вас есть метод для получения данных
+            List<StandartPump> standartPumps = new List<StandartPump>();
+            //var pump = oldPumps[10];
+            foreach(var oldPump in oldPumps)
+            {
+                //получаем словарь даных насоса
+                Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
+                // Новая коллекция данных
+                Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
+               
+                //Перебор маисва с даными внешней температуры
+                for (int i = 0; i < outTemps.Length; i++)
+                {
+                    StandartDataPump standartDataPump = new StandartDataPump();
+                    if (oldDictionary.ContainsKey(outTemps[i]))
+                    {
+                        //код если есть значение такой температуры н улице
+                        oldDictionary.TryGetValue(outTemps[i], out List<DataPump> oldDataPump);
+                        if(oldDataPump.Any(x => x.Temp == flowTemp[i]))
+                        {
+                            var oldDataForThisOutAndFlowTemp = oldDataPump.FirstOrDefault(x => x.Temp == flowTemp[i]);
+                            standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp);
+                            if (!newDictionary.ContainsKey(outTemps[i]))
+                                //если нет записи с таким ключом
+                                newDictionary.Add(outTemps[i], new List<StandartDataPump> { standartDataPump });
+                            else
+                            {
+                                //если есть запись с таким ключом
+                                newDictionary.TryGetValue(outTemps[i], out List<StandartDataPump> newStandartDataPump);
+                                newStandartDataPump.Add(standartDataPump);
+                            }
+                        }
+                        else
+                        {
+                            //код если есть такая температра на улице в таблице но нет значения с такой температурой
+                            HandleNoDataForFlowTemp();
+
+                        }
+                    }
+                    else
+                    {
+                        //Код если нет такой температуры на улице в таблице
+                        HandleNoDataForOutTemp();
+                    }
+                }
+                var standartPump = new StandartPump()
+                {
+                    Name = oldPump.Name,
+                    Type = oldPump.Type,
+                    Data = newDictionary
+                };
+                standartPumps.Add(standartPump);
+            }
+
+            return standartPumps;
+
+
+        }
+
+        private StandartDataPump CreateStandartDataPump(DataPump dataPump)
+        {
+            return new StandartDataPump
+            {
+                Temp = dataPump.Temp,
+                Climate = "Warm",
+                MinHC = 0,
+                MidHC = dataPump.HC,
+                MaxHC = dataPump.HC,
+                MinCOP = 0,
+                MidCOP = dataPump.COP,
+                MaxCOP = dataPump.COP
+            };
+        }
+        private void HandleNoDataForFlowTemp()
+        {
+            // Код, если нет значения с такой температурой
+        }
+
+        private void HandleNoDataForOutTemp()
+        {
+            // Код, если нет такой температуры
+        }
         public List<Pump> GetAllPumpsFromExel(XLWorkbook workbook)
         {
             List<Pump> pumps = new List<Pump>();

@@ -15,7 +15,9 @@ class Program
         using (var workbook = new XLWorkbook(excelFilePath))
         {
             var pumpService = new PumpService();
-            var pumps = pumpService.GetAllPumpsWithBasicTemp(workbook);
+            int[] a = { -7, 2, 7, 12, -7, 2, 7, 12 };
+            int[] b = { 35, 35, 31, 26, 55, 55, 46, 34 };
+            var pumps = pumpService.Test(workbook, a, b);
             foreach (var pump in pumps)
             {
                 Console.WriteLine($"Pump: {pump.Name}, Type: {pump.Type}");
@@ -24,10 +26,11 @@ class Program
                     Console.WriteLine($"  Time: {dataPair.Key}");
                     foreach (var data in dataPair.Value)
                     {
-                        Console.WriteLine($"    Temp: {data.Temp}, HC: {data.HC}, COP: {data.COP}");
+                        Console.WriteLine($"    Temp: {data.Temp}, HC: {data.MaxHC}, COP: {data.MaxCOP}");
                     }
                 }
             }
+            
 
         }
     }
