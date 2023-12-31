@@ -53,7 +53,19 @@ namespace TestExel
                         else
                         {
                             //код если есть такая температра на улице в таблице но нет значения с такой температурой
-                            HandleNoDataForFlowTemp();
+                            //получаем даные при 55 градусов
+                            var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
+                            var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
+                            standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp[i]);
+                            if (!newDictionary.ContainsKey(outTemps[i]))
+                                //если нет записи с таким ключом
+                                newDictionary.Add(outTemps[i], new List<StandartDataPump> { standartDataPump });
+                            else
+                            {
+                                //если есть запись с таким ключом
+                                newDictionary.TryGetValue(outTemps[i], out List<StandartDataPump> newStandartDataPump);
+                                newStandartDataPump.Add(standartDataPump);
+                            }
 
                         }
                     }
@@ -91,11 +103,21 @@ namespace TestExel
                 MaxCOP = dataPump.COP
             };
         }
-        private void HandleNoDataForFlowTemp()
+        private StandartDataPump CreateStandartDataPumpWannOtherTemp(DataPump oldDataWithHighGrad, DataPump oldDataWithLowGrad, int outTemp)
         {
-            // Код, если нет значения с такой температурой
+            var dif = oldDataWithHighGrad.Temp - outTemp;
+            return new StandartDataPump
+            {
+                Temp = outTemp,
+                Climate = "Warm",
+                MinHC = 0,
+                MidHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / 20, 2),
+                MaxHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / 20, 2),
+                MinCOP = 0,
+                MidCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / 20, 2),
+                MaxCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / 20, 2)
+            };
         }
-
         private void HandleNoDataForOutTemp()
         {
             // Код, если нет такой температуры
