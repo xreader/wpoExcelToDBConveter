@@ -15,11 +15,16 @@ class Program
         using (var workbook = new XLWorkbook(excelFilePath))
         {
             var pumpService = new PumpService();
-            int[] a = { -7, 2, 7, 12, -7, 2, 7, 12 };
-            int[] b = { 35, 35, 31, 26, 55, 55, 46, 34 };
-            var pumps = pumpService.Test(workbook, a, b, "Warm");
-
-            foreach (var pump in pumps)
+            int[] outTempWarm = { -7, 2, 7, 12, -7, 2, 7, 12 };
+            int[] inTempWarm = { 35, 35, 31, 26, 55, 55, 46, 34 };
+            var pumpsWarm = pumpService.Test(workbook, outTempWarm, inTempWarm, "Warm");
+            int[] outTempMid = { -20, -15, -10, -7, 2, 7, 12, -20, -15, -10, -7, 2, 7, 12};
+            int[] inTempMid = { 35, 35, 35, 34, 30, 27, 24, 55, 55, 55, 52, 42, 36, 30 };
+            var pumpsMid = pumpService.Test(workbook, outTempMid, inTempMid, "Mid");
+            int[] outTempCold = { -20, -7, 2, 7, 12, -20, -7, 2, 7, 12};
+            int[] inTempCold = { 35, 30, 27, 25, 24, 55, 44, 37, 32, 30 };
+            var pumpsCold = pumpService.Test(workbook, outTempCold, inTempCold, "Cold");
+            foreach (var pump in pumpsMid)
             {
                 Console.WriteLine($"Pump: {pump.Name}, Type: {pump.Type}");
                 foreach (var dataPair in pump.Data)
