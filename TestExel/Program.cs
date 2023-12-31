@@ -17,7 +17,8 @@ class Program
             var pumpService = new PumpService();
             int[] a = { -7, 2, 7, 12, -7, 2, 7, 12 };
             int[] b = { 35, 35, 31, 26, 55, 55, 46, 34 };
-            var pumps = pumpService.Test(workbook, a, b);
+            var pumps = pumpService.Test(workbook, a, b, "Warm");
+
             foreach (var pump in pumps)
             {
                 Console.WriteLine($"Pump: {pump.Name}, Type: {pump.Type}");
@@ -26,7 +27,7 @@ class Program
                     Console.WriteLine($"  Time: {dataPair.Key}");
                     foreach (var data in dataPair.Value)
                     {
-                        Console.WriteLine($"    Temp: {data.Temp}, HC: {data.MaxHC}, COP: {data.MaxCOP}");
+                        Console.WriteLine($"    Temp: {data.Temp}, Climate: {data.Climate} , HC: {data.MaxHC}, COP: {data.MaxCOP}");
                     }
                 }
             }
