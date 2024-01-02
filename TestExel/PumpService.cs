@@ -24,39 +24,30 @@ namespace TestExel
         //the method now only copies the values and transfers them to the standard,
         //provided that the temperature outside is already the same as in the old model and the temperature inside is also at the same temperature outside
         //and so far only for warm climates
-        public void AddMinOutTempWhenPumpWorked(Pump pump,ref int[] outTepms,ref int[] flowTemps)
-        {
-            Dictionary<int,List<DataPump>> data = pump.Data;
-            int minOutTemp = outTepms.Min();
-            var minKeyBeforeTarget = data.Keys
-                .Where(key => key < minOutTemp)
-                .DefaultIfEmpty() // В случае отсутствия элементов возвращаем пустой ключ
-                .Min();
-
-            if (minKeyBeforeTarget != default(int))
-            {
-                outTepms = outTepms.Concat(new[] { minKeyBeforeTarget, minKeyBeforeTarget }).ToArray();
-                flowTemps = flowTemps.Concat(new[] { 35, 55}).ToArray();
-            }
-        }
+        
         public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, int[] outTemps, int[] flowTemps, string climat)
         {
-            List<Pump> oldPumps = GetAllPumpsWithBasicTemp();
+            List<Pump> oldPumps = GetAllPumpsFromExel();
+            //var oldPump = oldPumps[16];
+
             foreach(var oldPump in oldPumps)
             {
                 //Get the pump data dictionary
                 Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
-                AddMinOutTempWhenPumpWorked(oldPump,ref outTemps,ref flowTemps);
+               
+                var result = AddMinOutTempWhenPumpWorked(oldPump, outTemps, flowTemps);
+                var outTemps2 = result.Item1;
+                var flowTemps2 = result.Item2;
                 if (standartPumps.Any(x=>x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x=>x.Name == oldPump.Name).Data;
-                    GetConvertData(outTemps, flowTemps, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps2, flowTemps2, climat, newDictionary, oldDictionary);
                     
                 }
                 else
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-                    GetConvertData(outTemps, flowTemps, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps2, flowTemps2, climat, newDictionary, oldDictionary);
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
@@ -70,6 +61,33 @@ namespace TestExel
             return standartPumps;
 
 
+        }
+        //Тестовый метод добавляет минимальные температры когда рабоатет насос, нужно модифицировать
+        private (int[], int[]) AddMinOutTempWhenPumpWorked(Pump pump, int[] outTepms, int[] flowTemps)
+        {
+            Dictionary<int, List<DataPump>> data = pump.Data;
+            int minOutTemp = outTepms.Min();
+            var minKeyBeforeTargetFor35 = data.Keys
+                .Where(key => key < minOutTemp)
+                .Where(key => data.TryGetValue(key, out var dataList) && dataList.Any(item => item.Temp == 35))
+                .DefaultIfEmpty()
+                .Min();
+            var minKeyBeforeTargetFor55 = data.Keys
+                .Where(key => key < minOutTemp)
+                .Where(key => data.TryGetValue(key, out var dataList) && dataList.Any(item => item.Temp == 55))
+                .DefaultIfEmpty()
+                .Min();
+            if (minKeyBeforeTargetFor35 != default(int))
+            {
+                outTepms = outTepms.Concat(new[] { minKeyBeforeTargetFor35}).ToArray();
+                flowTemps = flowTemps.Concat(new[] { 35}).ToArray();
+            }
+            if (minKeyBeforeTargetFor55 != default(int))
+            {
+                outTepms = outTepms.Concat(new[] { minKeyBeforeTargetFor55 }).ToArray();
+                flowTemps = flowTemps.Concat(new[] { 55 }).ToArray();
+            }
+            return (outTepms, flowTemps);
         }
         //Creating a new data object according to the standard when it is in the table
         private StandartDataPump CreateStandartDataPump(DataPump dataPump, string climat)
