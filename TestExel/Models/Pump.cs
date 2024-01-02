@@ -46,7 +46,7 @@ class Pump
         Data = data;
     }
     //We get all the temperatures outside
-    public int[] GetAllTZ(string cellLetter, int firstNum)
+    private int[] GetAllTZ(string cellLetter, int firstNum)
     {
         List<int> dataArray = new List<int>();
         var tz = _sheet.Cell(cellLetter + firstNum).GetString();
@@ -58,12 +58,13 @@ class Pump
         }
         return dataArray.ToArray();
     }
-    public List<double> ReadExcelRangeToDoubleArray(string cellRange)
+    //Read numeric data from Excel
+    private List<double> ReadExcelRangeToDoubleArray(string cellRange)
     {
-        // Выбор ячеек по диапазону
+        // Select cells by range
         var range = _sheet.Range(cellRange);
 
-        // Преобразование данных в массив double
+        // Convert data to double array
         var dataArray = range.Cells().Select(cell =>
         {
             string cellValue = cell.GetString();
@@ -72,8 +73,8 @@ class Pump
 
         return dataArray;
     }
-
-    public static void RemovePIValues(List<double> allData)
+    //Remove unnecessary values
+    private static void RemovePIValues(List<double> allData)
     {
         int indexRemovePI = 1;
         const int step = 2; 
@@ -83,20 +84,26 @@ class Pump
             indexRemovePI += step;
         }
     }
-    public static void AddValuesInDictionary(Dictionary<int, List<DataPump>> dictionary, List<double> allData,int tempOut)
+    //Add the required data to the dictionary with pump data
+    private static void AddValuesInDictionary(Dictionary<int, List<DataPump>> dictionary, List<double> allData,int tempOut)
     {
         var datasPump = new List<DataPump>();
         int tempWaterIn = 25;
         for (int i = 0; i < allData.Count; i = i + 2)
         {
-            datasPump.Add(new DataPump
+            if (allData[i] != 0 && allData[i + 1] != 0)
             {
-                Temp = tempWaterIn,
-                HC = allData[i],
-                COP = allData[i + 1]
-            });
+                datasPump.Add(new DataPump
+                {
+                    Temp = tempWaterIn,
+                    HC = allData[i],
+                    COP = allData[i + 1]
+                });
+
+            }
             tempWaterIn += 5;
         }
-        dictionary.Add(tempOut, datasPump);
+        if(datasPump.Count > 0)
+            dictionary.Add(tempOut, datasPump);
     }
 }

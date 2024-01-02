@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Math;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,58 +14,64 @@ namespace TestExel
 {
     internal class PumpService
     {
+        private readonly XLWorkbook workbook;
 
-        //метод сейчас только копирует значения и переносит их в стандарт,
-        //при условии что температура на улице уже есть такая в старой моделе и температура внутри тоже есть при такой температуре на улице
-        //и пока только для теплого климата
-        public List<StandartPump> Test(XLWorkbook workbook, int[] outTemps, int[] flowTemp, string climat)
+        public PumpService(string excelFilePath)
         {
-            List<Pump> oldPumps = GetAllPumpsWithBasicTemp(workbook); // Предположим, у вас есть метод для получения данных
-            List<StandartPump> standartPumps = new List<StandartPump>();
-            //var pump = oldPumps[10];
+            workbook = new XLWorkbook(excelFilePath);
+        }
+        public List<StandartPump> CreateListStandartPumps() => new List<StandartPump>();
+        //the method now only copies the values and transfers them to the standard,
+        //provided that the temperature outside is already the same as in the old model and the temperature inside is also at the same temperature outside
+        //and so far only for warm climates
+        public void AddMinOutTempWhenPumpWorked(Pump pump,ref int[] outTepms,ref int[] flowTemps)
+        {
+            Dictionary<int,List<DataPump>> data = pump.Data;
+            int minOutTemp = outTepms.Min();
+            var minKeyBeforeTarget = data.Keys
+                .Where(key => key < minOutTemp)
+                .DefaultIfEmpty() // В случае отсутствия элементов возвращаем пустой ключ
+                .Min();
+
+            if (minKeyBeforeTarget != default(int))
+            {
+                outTepms = outTepms.Concat(new[] { minKeyBeforeTarget, minKeyBeforeTarget }).ToArray();
+                flowTemps = flowTemps.Concat(new[] { 35, 55}).ToArray();
+            }
+        }
+        public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, int[] outTemps, int[] flowTemps, string climat)
+        {
+            List<Pump> oldPumps = GetAllPumpsWithBasicTemp();
             foreach(var oldPump in oldPumps)
             {
-                //получаем словарь даных насоса
+                //Get the pump data dictionary
                 Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
-                // Новая коллекция данных
-                Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-               
-                //Перебор маисва с даными внешней температуры
-                for (int i = 0; i < outTemps.Length; i++)
+                AddMinOutTempWhenPumpWorked(oldPump,ref outTemps,ref flowTemps);
+                if (standartPumps.Any(x=>x.Name == oldPump.Name))
                 {
+                    Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x=>x.Name == oldPump.Name).Data;
+                    GetConvertData(outTemps, flowTemps, climat, newDictionary, oldDictionary);
                     
-                    if (oldDictionary.ContainsKey(outTemps[i]))
-                    {
-                        //код если есть значение такой температуры н улице
-                        oldDictionary.TryGetValue(outTemps[i], out List<DataPump> oldDataPump);
-                        //Конвертируем значения
-                        ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
-                        
-                    }
-                    else
-                    {
-                        //Код если нет такой температуры на улице в таблице
-
-                        //Поиск даных для такой температуры на улице когда их нет
-                        var oldDataPump = FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
-                        //Конвертируем значения
-                        ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
-                    }
                 }
-                var standartPump = new StandartPump()
+                else
                 {
-                    Name = oldPump.Name,
-                    Type = oldPump.Type,
-                    Data = newDictionary
-                };
-                standartPumps.Add(standartPump);
+                    Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
+                    GetConvertData(outTemps, flowTemps, climat, newDictionary, oldDictionary);
+                    var standartPump = new StandartPump()
+                    {
+                        Name = oldPump.Name,
+                        Type = oldPump.Type,
+                        Data = newDictionary
+                    };
+                    standartPumps.Add(standartPump);
+                }
             }
 
             return standartPumps;
 
 
         }
-        //Создание обьекта новых даных под стандарт когда они есть в таблице
+        //Creating a new data object according to the standard when it is in the table
         private StandartDataPump CreateStandartDataPump(DataPump dataPump, string climat)
         {
             return new StandartDataPump
@@ -79,7 +86,7 @@ namespace TestExel
                 MaxCOP = dataPump.COP
             };
         }
-        //Создание обьекта новых даных под стандарт когда их нет в таблице
+        //Creating a new data object according to the standard when it is not in the table
         private StandartDataPump CreateStandartDataPumpWannOtherTemp(DataPump oldDataWithHighGrad, DataPump oldDataWithLowGrad, int outTemp, string climat)
         {
             var dif = oldDataWithHighGrad.Temp - outTemp;
@@ -95,7 +102,7 @@ namespace TestExel
                 MaxCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / 20, 2)
             };
         }
-        //Расчитывает даные для насоса когда у нас нед даных при такой температуре на улице
+        //Calculates data for the pump when we do not have data at this temperature outside
         private List<DataPump> FindDataWhenNoDatainThisOutTemp(Dictionary<int, List<DataPump>> oldDictionary, int outTemp)
         {
             var maxKeyBeforeTarget = oldDictionary.Keys.Where(key => key < outTemp).DefaultIfEmpty(int.MinValue).Max();
@@ -104,9 +111,9 @@ namespace TestExel
             if (!oldDictionary.TryGetValue(maxKeyBeforeTarget, out var minDataPump) ||
                 !oldDictionary.TryGetValue(minKeyBeforeTarget, out var maxDataPump))
             {
-                return new List<DataPump>(); // Или другой вариант обработки, если ключи не найдены
+                return new List<DataPump>(); 
             }
-            //Расчет даных для насоса при условии что такой температуры на улице не было
+            //Calculation of data for the pump, provided that there was no such temperature outside
             var oldDataPump = minDataPump.Zip(maxDataPump, (minElement, maxElement) => new DataPump
             {
                 Temp = minElement.Temp,
@@ -116,24 +123,26 @@ namespace TestExel
 
             return oldDataPump;
         }
-
+        //Convert the data
         private void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary)
         {
             var standartDataPump = new StandartDataPump();
-
+            bool standartDataPumpChanged = false;
             if (oldDataPump.Any(x => x.Temp == flowTemp))
             {
                 var oldDataForThisOutAndFlowTemp = oldDataPump.FirstOrDefault(x => x.Temp == flowTemp);
                 standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp, climat);
+                standartDataPumpChanged = true;
             }
             else if (oldDataPump.Any(x => x.Temp == 55) && oldDataPump.Any(x => x.Temp == 35))
             {
                 var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
                 var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
                 standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, climat);
+                standartDataPumpChanged = true;
             }
-
-            if (standartDataPump != null)
+            //Сheck whether data has been added, if not, then there is no data and there is no need to add it
+            if (standartDataPumpChanged)
             {
                 if (!newDictionary.TryGetValue(outTemp, out var newStandartDataPump))
                 {
@@ -144,8 +153,32 @@ namespace TestExel
                 newStandartDataPump.Add(standartDataPump);
             }
         }
+        //Get already converted data
+        private void GetConvertData(int[] outTemps, int[] flowTemp,string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        {
+            for (int i = 0; i < outTemps.Length; i++)
+            {
 
-        public List<Pump> GetAllPumpsFromExel(XLWorkbook workbook)
+                if (oldDictionary.ContainsKey(outTemps[i]))
+                {
+                    //Сode if there is a value for this temperature outside
+                    oldDictionary.TryGetValue(outTemps[i], out List<DataPump> oldDataPump);
+                    //Convert values
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
+
+                }
+                else
+                {
+                    //Code if there is no such temperature outside in the table
+                    //Search for data for a temperature outside when there is none
+                    var oldDataPump = FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
+                    //Convert values
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
+                }
+            }
+        }
+        //Get all pumps from Exel
+        private List<Pump> GetAllPumpsFromExel()
         {
             List<Pump> pumps = new List<Pump>();
             var sheetsCount = workbook.Worksheets.Count;
@@ -164,11 +197,10 @@ namespace TestExel
             RoundCOPAndP(pumps);
             return pumps;
         }
-
         //Getting all pumps but only with 30 and 50 degree data
-        public List<Pump> GetAllPumpsWithBasicTemp(XLWorkbook workbook)
+        private List<Pump> GetAllPumpsWithBasicTemp()
         {
-            var pumps = GetAllPumpsFromExel(workbook);
+            var pumps = GetAllPumpsFromExel();
             var filteredData = pumps
                 .Select(pump => new Pump
                 {
@@ -183,7 +215,8 @@ namespace TestExel
             
             return filteredData;
         }
-        public static void RoundCOPAndP(List<Pump> pumps)
+        //Data rounding
+        private static void RoundCOPAndP(List<Pump> pumps)
         {
             foreach (var pump in pumps)
             {

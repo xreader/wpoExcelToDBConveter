@@ -20,5 +20,6 @@ namespace TestExel.StandartModels
 
         public double MaxCOP { get; set; }
 
+
     }
 }
