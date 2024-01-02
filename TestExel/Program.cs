@@ -18,13 +18,13 @@ class Program
 
         var standartPumps = pumpService.CreateListStandartPumps();
 
-        int[] outTempWarm = { -7, 2, 7, 12, -7, 2, 7, 12 };
-        int[] inTempWarm = { 35, 35, 31, 26, 55, 55, 46, 34 };
-        pumpService.GetDataInListStandartPumps(standartPumps, outTempWarm, inTempWarm, "Warm");
+        //int[] outTempWarm = { -7, 2, 7, 12, -7, 2, 7, 12 };
+        //int[] inTempWarm = { 35, 35, 31, 26, 55, 55, 46, 34 };
+        //pumpService.GetDataInListStandartPumps(standartPumps, outTempWarm, inTempWarm, "Warm");
 
-        //int[] outTempMid = { -20, -15, -10, -7, 2, 7, 12, -20, -15, -10, -7, 2, 7, 12 };
-        //int[] inTempMid = { 35, 35, 35, 34, 30, 27, 24, 55, 55, 55, 52, 42, 36, 30 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, outTempMid, inTempMid, "Mid");
+        int[] outTempMid = { -20, -15, -10, -7, 2, 7, 12, -20, -15, -10, -7, 2, 7, 12 };
+        int[] inTempMid = { 35, 35, 35, 34, 30, 27, 24, 55, 55, 55, 52, 42, 36, 30 };
+        pumpService.GetDataInListStandartPumps(standartPumps, outTempMid, inTempMid, "Mid");
 
         //int[] outTempCold = { -20, -7, 2, 7, 12, -20, -7, 2, 7, 12 };
         //int[] inTempCold = { 35, 30, 27, 25, 24, 55, 44, 37, 32, 30 };

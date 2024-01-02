@@ -113,11 +113,11 @@ namespace TestExel
                 Temp = outTemp,
                 Climate = climat,
                 MinHC = 0,
-                MidHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / 20, 2),
-                MaxHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / 20, 2),
+                MidHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
+                MaxHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MinCOP = 0,
-                MidCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / 20, 2),
-                MaxCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / 20, 2)
+                MidCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
+                MaxCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2)
             };
         }
         //Calculates data for the pump when we do not have data at this temperature outside
@@ -152,13 +152,32 @@ namespace TestExel
                 standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp, climat);
                 standartDataPumpChanged = true;
             }
-            else if (oldDataPump.Any(x => x.Temp == 55) && oldDataPump.Any(x => x.Temp == 35))
+            else 
             {
-                var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
-                var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
-                standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, climat);
-                standartDataPumpChanged = true;
+                var maxKeyBeforeTarget = oldDataPump
+                        .Where(x => x.Temp < flowTemp)
+                        .Select(x => x.Temp)
+                        .DefaultIfEmpty()
+                        .Max();
+                var minKeyBeforeTarget = oldDataPump
+                       .Where(x => x.Temp > flowTemp)
+                       .Select(x => x.Temp)
+                       .DefaultIfEmpty()
+                       .Min();
+                if(maxKeyBeforeTarget != (int)default && minKeyBeforeTarget != (int)default)
+                {
+                    var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == minKeyBeforeTarget);
+                    var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == maxKeyBeforeTarget);
+
+                    if (maxKeyBeforeTarget != null && minKeyBeforeTarget != null)
+                    {
+                        standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, climat);
+                        standartDataPumpChanged = true;
+                    }
+                }                
             }
+            
+            
             //Сheck whether data has been added, if not, then there is no data and there is no need to add it
             if (standartDataPumpChanged)
             {
