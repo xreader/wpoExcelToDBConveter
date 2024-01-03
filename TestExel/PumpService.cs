@@ -27,7 +27,7 @@ namespace TestExel
         
         public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, int[] outTemps, int[] flowTemps, string climat)
         {
-            List<Pump> oldPumps = GetAllPumpsFromExel();
+            List<Pump> oldPumps = GetAllPumpsWithBasicTemp();
             //var oldPump = oldPumps[16];
 
             foreach(var oldPump in oldPumps)
@@ -51,7 +51,6 @@ namespace TestExel
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
-                        Type = oldPump.Type,
                         Data = newDictionary
                     };
                     standartPumps.Add(standartPump);
@@ -97,27 +96,28 @@ namespace TestExel
                 Temp = dataPump.Temp,
                 Climate = climat,
                 MinHC = 0,
-                MidHC = dataPump.HC,
-                MaxHC = dataPump.HC,
+                MidHC = dataPump.MidHC,
+                MaxHC = dataPump.MidHC,
                 MinCOP = 0,
-                MidCOP = dataPump.COP,
-                MaxCOP = dataPump.COP
+                MidCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP,
+                MaxCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP
             };
         }
         //Creating a new data object according to the standard when it is not in the table
         private StandartDataPump CreateStandartDataPumpWannOtherTemp(DataPump oldDataWithHighGrad, DataPump oldDataWithLowGrad, int outTemp, string climat)
         {
             var dif = oldDataWithHighGrad.Temp - outTemp;
+            var midCop = Math.Round(oldDataWithHighGrad.MidCOP - dif * (oldDataWithHighGrad.MidCOP - oldDataWithLowGrad.MidCOP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
             return new StandartDataPump
             {
                 Temp = outTemp,
                 Climate = climat,
                 MinHC = 0,
-                MidHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
-                MaxHC = Math.Round(oldDataWithHighGrad.HC - dif * (oldDataWithHighGrad.HC - oldDataWithLowGrad.HC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
+                MidHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
+                MaxHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MinCOP = 0,
-                MidCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
-                MaxCOP = Math.Round(oldDataWithHighGrad.COP - dif * (oldDataWithHighGrad.COP - oldDataWithLowGrad.COP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2)
+                MidCOP = midCop < 1 ? 1 : midCop,
+                MaxCOP = midCop < 1 ? 1 : midCop
             };
         }
         //Calculates data for the pump when we do not have data at this temperature outside
@@ -135,8 +135,8 @@ namespace TestExel
             var oldDataPump = minDataPump.Zip(maxDataPump, (minElement, maxElement) => new DataPump
             {
                 Temp = minElement.Temp,
-                HC = Math.Round(minElement.HC + ((outTemp - maxKeyBeforeTarget) * (maxElement.HC - minElement.HC) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
-                COP = Math.Round(minElement.COP + ((outTemp - maxKeyBeforeTarget) * (maxElement.COP - minElement.COP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2)
+                MidHC = Math.Round(minElement.MidHC + ((outTemp - maxKeyBeforeTarget) * (maxElement.MidHC - minElement.MidHC) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
+                MidCOP = Math.Round(minElement.MidCOP + ((outTemp - maxKeyBeforeTarget) * (maxElement.MidCOP - minElement.MidCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2)
             }).ToList();
 
             return oldDataPump;
@@ -215,7 +215,7 @@ namespace TestExel
             }
         }
         //Get all pumps from Exel
-        private List<Pump> GetAllPumpsFromExel()
+        public List<Pump> GetAllPumpsFromExel()
         {
             List<Pump> pumps = new List<Pump>();
             var sheetsCount = workbook.Worksheets.Count;
@@ -223,10 +223,9 @@ namespace TestExel
             {
                 var worksheet = workbook.Worksheet(i);
                 var pump = new Pump(worksheet);
-                pump.GetNamePumpInExel("H1");
-                pump.GetTypePumpInExel("A1");
-                pump.GetData(6,"A","B","AC");
-                
+                pump.Name = worksheet.Name;
+                pump.GetData(2,"B","C","H",35);
+                pump.GetData(15, "B", "C", "H", 55);
                 if (pump != null && pump.Name != "")
                     pumps.Add(pump);
 
@@ -242,7 +241,6 @@ namespace TestExel
                 .Select(pump => new Pump
                 {
                     Name = pump.Name,
-                    Type = pump.Type,
                     Data = pump.Data
                         .ToDictionary(
                             pair => pair.Key,
@@ -261,8 +259,13 @@ namespace TestExel
                 {
                     foreach (var data in dataPair.Value)
                     {
-                        data.COP = Math.Round(data.COP * 100) / 100;
-                        data.HC = Math.Round(data.HC * 100) / 100;
+                        data.MinCOP = Math.Round(data.MinCOP * 100) / 100;
+                        data.MidCOP = Math.Round(data.MidCOP * 100) / 100;
+                        data.MaxCOP = Math.Round(data.MaxCOP * 100) / 100;
+                        
+                        data.MinHC = Math.Round(data.MinHC * 100) / 100;
+                        data.MidHC = Math.Round(data.MidHC * 100) / 100;
+                        data.MaxHC = Math.Round(data.MaxHC * 100) / 100;
                     }
                 }
             }
