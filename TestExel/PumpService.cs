@@ -25,29 +25,29 @@ namespace TestExel
         //provided that the temperature outside is already the same as in the old model and the temperature inside is also at the same temperature outside
         //and so far only for warm climates
         
-        public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, int[] outTemps, int[] flowTemps, string climat)
+        public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
         {
-            List<Pump> oldPumps = GetAllPumpsWithBasicTemp();
+
             //var oldPump = oldPumps[16];
 
-            foreach(var oldPump in oldPumps)
+            foreach (var oldPump in oldPumps)
             {
                 //Get the pump data dictionary
                 Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
                
-                var result = AddMinOutTempWhenPumpWorked(oldPump, outTemps, flowTemps);
-                var outTemps2 = result.Item1;
-                var flowTemps2 = result.Item2;
+                //var result = AddMinOutTempWhenPumpWorked(oldPump, outTemps, flowTemps);
+               // var outTemps2 = result.Item1;
+                //var flowTemps2 = result.Item2;
                 if (standartPumps.Any(x=>x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x=>x.Name == oldPump.Name).Data;
-                    GetConvertData(outTemps2, flowTemps2, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
                     
                 }
                 else
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-                    GetConvertData(outTemps2, flowTemps2, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
@@ -93,31 +93,35 @@ namespace TestExel
         {
             return new StandartDataPump
             {
-                Temp = dataPump.Temp,
+                ForTemp = dataPump.Temp,
+                FlowTemp = dataPump.Temp,
                 Climate = climat,
-                MinHC = 0,
+                MinHC = dataPump.MinHC,
                 MidHC = dataPump.MidHC,
-                MaxHC = dataPump.MidHC,
-                MinCOP = 0,
+                MaxHC = dataPump.MaxHC,
+                MinCOP = dataPump.MinCOP < 1 ? 1 : dataPump.MinCOP,
                 MidCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP,
-                MaxCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP
+                MaxCOP = dataPump.MaxCOP < 1 ? 1 : dataPump.MaxCOP
             };
         }
         //Creating a new data object according to the standard when it is not in the table
-        private StandartDataPump CreateStandartDataPumpWannOtherTemp(DataPump oldDataWithHighGrad, DataPump oldDataWithLowGrad, int outTemp, string climat)
+        private StandartDataPump CreateStandartDataPumpWannOtherTemp(DataPump oldDataWithHighGrad, DataPump oldDataWithLowGrad, int flowTemp,int forTemp, string climat)
         {
-            var dif = oldDataWithHighGrad.Temp - outTemp;
+            var dif = oldDataWithHighGrad.Temp - flowTemp;
+            var minCop = Math.Round(oldDataWithHighGrad.MinCOP - dif * (oldDataWithHighGrad.MinCOP - oldDataWithLowGrad.MinCOP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
             var midCop = Math.Round(oldDataWithHighGrad.MidCOP - dif * (oldDataWithHighGrad.MidCOP - oldDataWithLowGrad.MidCOP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
+            var maxCop = Math.Round(oldDataWithHighGrad.MaxCOP - dif * (oldDataWithHighGrad.MaxCOP - oldDataWithLowGrad.MaxCOP) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
             return new StandartDataPump
             {
-                Temp = outTemp,
+                ForTemp = forTemp,
+                FlowTemp = flowTemp,
                 Climate = climat,
-                MinHC = 0,
+                MinHC = Math.Round(oldDataWithHighGrad.MinHC - dif * (oldDataWithHighGrad.MinHC - oldDataWithLowGrad.MinHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MidHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
-                MaxHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
-                MinCOP = 0,
+                MaxHC = Math.Round(oldDataWithHighGrad.MaxHC - dif * (oldDataWithHighGrad.MaxHC - oldDataWithLowGrad.MaxHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
+                MinCOP = minCop < 1 ? 1 : minCop,
                 MidCOP = midCop < 1 ? 1 : midCop,
-                MaxCOP = midCop < 1 ? 1 : midCop
+                MaxCOP = maxCop < 1 ? 1 : maxCop
             };
         }
         //Calculates data for the pump when we do not have data at this temperature outside
@@ -135,14 +139,18 @@ namespace TestExel
             var oldDataPump = minDataPump.Zip(maxDataPump, (minElement, maxElement) => new DataPump
             {
                 Temp = minElement.Temp,
+                MinHC = Math.Round(minElement.MinHC + ((outTemp - maxKeyBeforeTarget) * (maxElement.MinHC - minElement.MinHC) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
                 MidHC = Math.Round(minElement.MidHC + ((outTemp - maxKeyBeforeTarget) * (maxElement.MidHC - minElement.MidHC) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
-                MidCOP = Math.Round(minElement.MidCOP + ((outTemp - maxKeyBeforeTarget) * (maxElement.MidCOP - minElement.MidCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2)
+                MaxHC = Math.Round(minElement.MaxHC + ((outTemp - maxKeyBeforeTarget) * (maxElement.MaxHC - minElement.MaxHC) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
+                MinCOP = Math.Round(minElement.MinCOP + ((outTemp - maxKeyBeforeTarget) * (maxElement.MinCOP - minElement.MinCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
+                MidCOP = Math.Round(minElement.MidCOP + ((outTemp - maxKeyBeforeTarget) * (maxElement.MidCOP - minElement.MidCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2),
+                MaxCOP = Math.Round(minElement.MaxCOP + ((outTemp - maxKeyBeforeTarget) * (maxElement.MaxCOP - minElement.MaxCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget)), 2)
             }).ToList();
 
             return oldDataPump;
         }
         //Convert the data
-        private void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary)
+        private void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary)
         {
             var standartDataPump = new StandartDataPump();
             bool standartDataPumpChanged = false;
@@ -154,27 +162,28 @@ namespace TestExel
             }
             else 
             {
-                var maxKeyBeforeTarget = oldDataPump
-                        .Where(x => x.Temp < flowTemp)
-                        .Select(x => x.Temp)
-                        .DefaultIfEmpty()
-                        .Max();
-                var minKeyBeforeTarget = oldDataPump
-                       .Where(x => x.Temp > flowTemp)
-                       .Select(x => x.Temp)
-                       .DefaultIfEmpty()
-                       .Min();
-                if(maxKeyBeforeTarget != (int)default && minKeyBeforeTarget != (int)default)
-                {
-                    var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == minKeyBeforeTarget);
-                    var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == maxKeyBeforeTarget);
+                //var maxKeyBeforeTarget = oldDataPump
+                //        .Where(x => x.Temp < flowTemp)
+                //        .Select(x => x.Temp)
+                //        .DefaultIfEmpty()
+                //        .Max();
+                //var minKeyBeforeTarget = oldDataPump
+                //       .Where(x => x.Temp > flowTemp)
+                //       .Select(x => x.Temp)
+                //       .DefaultIfEmpty()
+                //       .Min();
+                //if(maxKeyBeforeTarget != (int)default && minKeyBeforeTarget != (int)default)
+                //{
 
-                    if (maxKeyBeforeTarget != null && minKeyBeforeTarget != null)
-                    {
-                        standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, climat);
-                        standartDataPumpChanged = true;
-                    }
-                }                
+                //}
+                var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
+                var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
+
+                if (oldDataWithHighGrad != null && oldDataWithLowGrad != null)
+                {
+                    standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, forTemp, climat);
+                    standartDataPumpChanged = true;
+                }
             }
             
             
@@ -191,7 +200,7 @@ namespace TestExel
             }
         }
         //Get already converted data
-        private void GetConvertData(int[] outTemps, int[] flowTemp,string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertData(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
         {
             for (int i = 0; i < outTemps.Length; i++)
             {
@@ -201,7 +210,7 @@ namespace TestExel
                     //Сode if there is a value for this temperature outside
                     oldDictionary.TryGetValue(outTemps[i], out List<DataPump> oldDataPump);
                     //Convert values
-                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
 
                 }
                 else
@@ -210,7 +219,7 @@ namespace TestExel
                     //Search for data for a temperature outside when there is none
                     var oldDataPump = FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
                     //Convert values
-                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], climat, newDictionary);
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
                 }
             }
         }
