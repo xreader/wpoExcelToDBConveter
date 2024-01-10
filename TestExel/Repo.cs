@@ -16,13 +16,6 @@ namespace TestExel
             _context = context;
         }
 
-        public void GetTest()
-        {
-            var a = _context.texts.Where(x=> x.textId <10).ToList();
-            foreach (var x in a)
-            {
-                Console.WriteLine(x.ger);
-            }
-        }
+        
     }
 }
