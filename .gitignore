@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /TestExel/test.xlsx
+/TestExel/wpov5_referenz.db
+/TestExel/testDB.db
