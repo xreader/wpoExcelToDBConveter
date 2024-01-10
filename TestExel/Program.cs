@@ -22,9 +22,6 @@ class Program
 
         var standartPumps = pumpService.CreateListStandartPumps();
         var oldPumps = pumpService.GetAllPumpsFromExel();
-        //int[] outTempWarm = { -7, 2, 7, 12, -7, 2, 7, 12 };
-        //int[] inTempWarm = { 35, 35, 31, 26, 55, 55, 46, 34 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, outTempWarm, inTempWarm, "Warm");
 
         int[] outTempMidFor35 = { -25, -10, -7, 2, 7, 12 };
         int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
