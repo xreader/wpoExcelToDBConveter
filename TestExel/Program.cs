@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Policy;
 using TestExel;
 using TestExel.DBConnection;
 using TestExel.StandartModels;
@@ -45,7 +46,7 @@ class Program
         using (var _context = new ApplicationDBContext(options))
         {
             var wp = _context.leaves.FirstOrDefault(x => x.value == myPump.Name); // находим насос
-            var numForHash = 74892;
+            var numForHash = 74892;// Для 35 при холод климат = 74892
             var typeData = 0;
             if (wp != null)
             {
@@ -54,10 +55,11 @@ class Program
                 string bigHash = "";
                 var wpId = wp.nodeid_fk_nodes_nodeid; //находим его айди
                 var Idnid = wpId+1;
-                var test = Idnid;
-                //for (int i = 0; i < 21; i++)
+                
+                //for (int i = 0; i < 23; i++)
                 while(_context.leaves.Count(x =>x.nodeid_fk_nodes_nodeid == Idnid) == 6) // Всегда 6 записей в которых храняться данные 
                 {
+                    var test = Idnid;
                     var dataWp = _context.leaves.Where(x=>x.nodeid_fk_nodes_nodeid == Idnid).ToList();
                     var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351); // берем температуру на улице
                     if(WPleistATemp != null) 
@@ -99,46 +101,59 @@ class Program
                                         }                                        
                                         _context.Update(WPleistHeiz);
                                         _context.Update(WPleistCOP);
-                                        var str = "#" + WPleistATempValue + "#" + dataPumpForThisData.MinHC + "#" + dataPumpForThisData.MinCOP;
+                                        var str = "#" + WPleistATempValue + "#" + WPleistHeiz.value_as_int + "#" + WPleistCOP.value_as_int;
                                         str = numForHash + str;
                                         int hash = GetHashCode(str);
                                         Gui14825Hashcode.value = hash.ToString();
                                         _context.Update(Gui14825Hashcode);
-                                        if(WPleistVTemp.value_as_int == Grad && RefKlimazone14825.value_as_int == typeClimat && _context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test) == 6)
+                                        if(WPleistVTemp.value_as_int == Grad && RefKlimazone14825.value_as_int == typeClimat && _context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test+1) == 6)
                                         {
                                             bigHash += hash + "#";
                                         }
                                         else
                                         {
-                                            if(Grad == 35 && typeClimat == 1)
+                                            if (_context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test + 1) == 7)
+                                            {
+                                                bigHash += hash + "#";
+
+                                            }
+                                            if (Grad == 35 && typeClimat == 1)
                                             {
                                                 var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
                                                 bigHashDB.value = bigHash;
                                                 _context.Update(bigHashDB);
-                                            }
-                                            if (Grad == 55 && typeClimat == 1)
+                                                Grad = 55;                                                
+                                            }else if (Grad == 55 && typeClimat == 1)
                                             {
                                                 var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
                                                 bigHashDB.value = bigHash;
                                                 _context.Update(bigHashDB);
-                                            }
-                                            if (Grad == 35 && typeClimat == 2)
+                                                Grad = 35;
+                                                typeClimat = 2;
+                                            } else if (Grad == 35 && typeClimat == 2)
                                             {
                                                 var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
                                                 bigHashDB.value = bigHash;
                                                 _context.Update(bigHashDB);
-                                            }
-                                            if (Grad == 55 && typeClimat == 2)
+                                                Grad = 55;
+                                            }else if (Grad == 55 && typeClimat == 2)
                                             {
                                                 var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
                                                 bigHashDB.value = bigHash;
                                                 _context.Update(bigHashDB);
+                                                Grad = 35;
+                                                typeClimat = 1;
+                                            }
+                                            if(_context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test + 1) == 6)
+                                            {
+                                                bigHash = "" + hash + "#";
+                                                
+                                            }
+                                            else {
+                                                bigHash = "";
                                             }
 
-
-                                            bigHash = "";
-                                            Grad = (int)WPleistVTemp.value_as_int;
-                                            typeClimat = (int)RefKlimazone14825.value_as_int;
+                                            
 
                                         }
                                         _context.SaveChanges();
@@ -148,10 +163,73 @@ class Program
                                 }
                             }
                         }
+                        //если такого значения нет в данных то данные из бд не меняются а только хэш добовляется в строку хэшей
+                        else
+                        {    
+                            var WPleistVTemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011);  //Находим температуру внутри
+                            var RefKlimazone14825 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356); //находим тип климата
+                            var Gui14825Hashcode = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);                            
+                            if (WPleistVTemp.value_as_int == Grad && RefKlimazone14825.value_as_int == typeClimat && _context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test + 1) == 6)
+                            {
+                                bigHash += Gui14825Hashcode.value + "#";
+                            }
+                            else
+                            {
+                                if (_context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test + 1) == 7)
+                                {
+                                    bigHash += Gui14825Hashcode.value + "#";
+
+                                }
+                                if (Grad == 35 && typeClimat == 1)
+                                {
+                                    var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
+                                    bigHashDB.value = bigHash;
+                                    _context.Update(bigHashDB);
+                                    Grad = 55;
+                                }
+                                else if (Grad == 55 && typeClimat == 1)
+                                {
+                                    var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
+                                    bigHashDB.value = bigHash;
+                                    _context.Update(bigHashDB);
+                                    Grad = 35;
+                                    typeClimat = 2;
+                                }
+                                else if (Grad == 35 && typeClimat == 2)
+                                {
+                                    var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
+                                    bigHashDB.value = bigHash;
+                                    _context.Update(bigHashDB);
+                                    Grad = 55;
+                                }
+                                else if (Grad == 55 && typeClimat == 2)
+                                {
+                                    var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
+                                    bigHashDB.value = bigHash;
+                                    _context.Update(bigHashDB);
+                                    Grad = 35;
+                                    typeClimat = 1;
+                                }
+                                if (_context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == test + 1) == 6)
+                                {
+                                    bigHash = "" + Gui14825Hashcode.value + "#";
+
+                                }
+                                else
+                                {
+                                    bigHash = "";
+                                }
+                            }
+                            _context.SaveChanges();
+                        }
                     }
                     Idnid++;
                     numForHash++;
                 }
+                //var bigHashDB = _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
+                //bigHashDB.value = bigHash;
+                //_context.Update(bigHashDB);
+                //_context.SaveChanges();
             }
 
 
