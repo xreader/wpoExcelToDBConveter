@@ -16,7 +16,7 @@ namespace TestExel.Repository
             _context = context;
         }
 
-        public Leaves FindLeaveByNamePump(string name) => _context.leaves.FirstOrDefault(x => x.value == name);
+        public List<Leaves> FindLeaveByNamePump(string name) => _context.leaves.Where(x => x.value.Contains(name)).ToList();
         public int GetCountLeavesById(int id) => _context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == id);  
         public List<Leaves> GetLeavesById(int id) => _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToList();
 
