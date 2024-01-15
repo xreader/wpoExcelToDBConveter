@@ -22,12 +22,14 @@ namespace TestExel.Services
                .Options;
             _pumpRepositoryForDB = new PumpRepositoryForDB(new ApplicationDBContext(options));
         }
-        public void GoalLogic(StandartPump pump)
+        public void GoalLogic(StandartPump pump, ref int b)
         {
             var wpList = _pumpRepositoryForDB.FindLeaveByNamePump(pump.Name); // находим насос
             //var numForHash = 74892;// Для 35 при холод климат = 74892
+
             foreach(var wp in wpList)
             {
+                bool[] upData = { false, false, false, false};
                 var typeData = 0;
                 if (wp != null)
                 {
@@ -40,8 +42,10 @@ namespace TestExel.Services
                     {
                         Idnid++;
                     }
-                    
-                    while (_pumpRepositoryForDB.GetCountLeavesById(Idnid) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid+1) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid)==0) // Всегда 6 записей в которых храняться данные 
+                    var a = true;
+                    //while ((_pumpRepositoryForDB.GetCountLeavesById(Idnid) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid+1) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid)==0)
+                    //    && !upData[0] && !upData[1] && !upData[2] && !upData[3]) // Всегда 6 записей в которых храняться данные 
+                    while (a) 
                     {
                         var dataWp = _pumpRepositoryForDB.GetLeavesById(Idnid);
                         var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351); // берем температуру на улице
@@ -76,7 +80,7 @@ namespace TestExel.Services
                                             }
                                             else
                                             {
-                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, hash.ToString(), ref bigHash);
+                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, hash.ToString(), ref bigHash, ref upData);
                                             }
                                         }
                                     }
@@ -85,14 +89,20 @@ namespace TestExel.Services
                                         var WPleistVTemp2 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011);  //Находим температуру внутри
                                         var RefKlimazone148252 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356); //находим тип климата
                                         var Gui14825Hashcode2 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);
-                                        if (WPleistVTemp2.value_as_int == Grad && RefKlimazone148252.value_as_int == typeClimat && _pumpRepositoryForDB.GetCountLeavesById(Idnid + 1) == 6)
+                                        if(Gui14825Hashcode2 != null)
                                         {
-                                            bigHash += Gui14825Hashcode2.value + "#";
+                                            if (WPleistVTemp2.value_as_int == Grad && RefKlimazone148252.value_as_int == typeClimat && _pumpRepositoryForDB.GetCountLeavesById(Idnid + 1) == 6)
+                                            {
+                                                bigHash += Gui14825Hashcode2.value + "#";
+                                            }
+                                            else
+                                            {
+                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode2.value, ref bigHash, ref upData);
+                                            }
+                                            b++;
                                         }
-                                        else
-                                        {
-                                            UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode2.value, ref bigHash);
-                                        }
+                                        
+                                        
                                     }
                                 }
                             }
@@ -108,13 +118,21 @@ namespace TestExel.Services
                                 }
                                 else
                                 {
-                                    UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode.value, ref bigHash);
+                                    UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode.value, ref bigHash, ref upData);
+                                    b++;
                                 }
+
+                                
                             }
                         }
                         Idnid++;
+                        if (upData[0] && upData[1] && upData[2] && upData[3])
+                        {
+                            a = false;
+                        }
                         //numForHash++;
                     }
+                    
                     Console.WriteLine("Pump -" + wp.value + "  Update!");
                     Console.WriteLine();
                     Console.WriteLine();
@@ -149,7 +167,7 @@ namespace TestExel.Services
         }
 
         //Обновляем большой хэш и переключаемся на следущую температуру и климат
-        private void UpdateBigHash(int Idnid, int wpId, ref int Grad, ref int typeClimat, string hash, ref string bigHash)
+        private void UpdateBigHash(int Idnid, int wpId, ref int Grad, ref int typeClimat, string hash, ref string bigHash, ref bool[] upBigHash)
         {
             if (_pumpRepositoryForDB.GetCountLeavesById(Idnid + 1) == 7)
             {
@@ -160,11 +178,14 @@ namespace TestExel.Services
             {   if(bigHash.Count() >= 150)
                 {
                     var bigHashDB = _pumpRepositoryForDB.GetBigHashFor35GradForKaltesKlimaByWpId(wpId);
-                    if(bigHashDB != null)
+                    if(bigHashDB != null && !upBigHash[0])
                     {
                         bigHashDB.value = bigHash;
                         if (_pumpRepositoryForDB.UpdateLeaves(bigHashDB))
+                        {
                             Console.WriteLine("------Up Big Hash For 35 Grad And Cold");
+                            upBigHash[0] = true;
+                        }
                     }
                     else
                     {
@@ -179,11 +200,14 @@ namespace TestExel.Services
                 if (bigHash.Count() >= 150)
                 {
                     var bigHashDB = _pumpRepositoryForDB.GetBigHashFor55GradForKaltesKlimaByWpId(wpId);
-                    if (bigHashDB != null)
+                    if (bigHashDB != null && !upBigHash[1])
                     {
                         bigHashDB.value = bigHash;
                         if (_pumpRepositoryForDB.UpdateLeaves(bigHashDB))
+                        {
                             Console.WriteLine("------Up Big Hash For 55 Grad And Cold");
+                            upBigHash[1] = true;
+                        }
                     }
                     else
                     {
@@ -198,11 +222,14 @@ namespace TestExel.Services
                 if (bigHash.Count() >= 150)
                 {
                     var bigHashDB = _pumpRepositoryForDB.GetBigHashFor35GradForMittelKlimaByWpId(wpId);
-                    if (bigHashDB != null)
+                    if (bigHashDB != null && !upBigHash[2])
                     {
                         bigHashDB.value = bigHash;
                         if (_pumpRepositoryForDB.UpdateLeaves(bigHashDB))
+                        {
                             Console.WriteLine("------Up Big Hash For 35 Grad And Mid");
+                            upBigHash[2] = true;
+                        }
                     }
                     else
                     {
@@ -216,11 +243,14 @@ namespace TestExel.Services
                 if (bigHash.Count() >= 150)
                 {
                     var bigHashDB = _pumpRepositoryForDB.GetBigHashFor55GradForMittelKlimaByWpId(wpId);
-                    if (bigHashDB != null)
+                    if (bigHashDB != null && !upBigHash[3])
                     {
                         bigHashDB.value = bigHash;
                         if (_pumpRepositoryForDB.UpdateLeaves(bigHashDB))
+                        {
                             Console.WriteLine("------Up Big Hash For 55 Grad And Mid");
+                            upBigHash[3] = true;
+                        }
                     }
                     else
                     {

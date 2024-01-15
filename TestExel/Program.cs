@@ -22,6 +22,11 @@ class Program
 {           
     static void Main()
     {
+        // Створити об'єкт Stopwatch
+        Stopwatch stopwatch = new Stopwatch();
+
+        // Почати вимірювання часу
+        stopwatch.Start();
         string excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx";
         var pumpService = new PumpService(excelFilePath);
 
@@ -45,15 +50,25 @@ class Program
         
 
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
-        //foreach (var pump in standartPumps)
-        //{
-        //    pumpServiceForDB.GoalLogic(pump);
-        //}
+        int a = 0;
+        foreach (var pump in standartPumps)
+        {
+            pumpServiceForDB.GoalLogic(pump,ref a);
+            
+        }
 
-        var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF05CNC");
-        pumpServiceForDB.GoalLogic(pump);
+        Console.WriteLine("Old data pumps = "+ a);
 
+        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF10ANB");
+        //pumpServiceForDB.GoalLogic(pump);
 
+        stopwatch.Stop();
+
+        // Отримати час, що пройшов
+        TimeSpan elapsedTime = stopwatch.Elapsed;
+
+        // Вивести результат
+        Console.WriteLine($"Час виконання: {elapsedTime.TotalMilliseconds} мс");
 
 
 
