@@ -47,7 +47,7 @@ class Program
         int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
         pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
 
-        
+
 
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
         foreach (var pump in standartPumps)
@@ -57,7 +57,7 @@ class Program
         }
 
 
-        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF08ANB");
+        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF05CNC");
         //pumpServiceForDB.GoalLogic(pump);
 
         stopwatch.Stop();

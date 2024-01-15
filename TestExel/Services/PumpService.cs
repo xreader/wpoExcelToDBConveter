@@ -28,7 +28,7 @@ namespace TestExel.Services
         public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
         {
 
-            //var oldPump = oldPumps[16];
+            //var oldPump = oldPumps[7];
 
             foreach (var oldPump in oldPumps)
             {
@@ -234,7 +234,7 @@ namespace TestExel.Services
                 var pump = new Pump(worksheet);
                 pump.Name = worksheet.Name;
                 pump.GetData(2, "B", "C", "H", 35);
-                pump.GetData(15, "B", "C", "H", 55);
+                pump.GetData(13, "B", "C", "H", 55);
                 if (pump != null && pump.Name != "")
                     pumps.Add(pump);
 
