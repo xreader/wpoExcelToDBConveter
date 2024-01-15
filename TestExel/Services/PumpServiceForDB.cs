@@ -22,7 +22,7 @@ namespace TestExel.Services
                .Options;
             _pumpRepositoryForDB = new PumpRepositoryForDB(new ApplicationDBContext(options));
         }
-        public void GoalLogic(StandartPump pump, ref int b)
+        public void GoalLogic(StandartPump pump)
         {
             var wpList = _pumpRepositoryForDB.FindLeaveByNamePump(pump.Name); // находим насос
             //var numForHash = 74892;// Для 35 при холод климат = 74892
@@ -99,7 +99,6 @@ namespace TestExel.Services
                                             {
                                                 UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode2.value, ref bigHash, ref upData);
                                             }
-                                            b++;
                                         }
                                         
                                         
@@ -119,7 +118,6 @@ namespace TestExel.Services
                                 else
                                 {
                                     UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode.value, ref bigHash, ref upData);
-                                    b++;
                                 }
 
                                 
@@ -147,18 +145,18 @@ namespace TestExel.Services
             switch (typeData)
             {
                 case 0:
-                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MinHC * 100);
-                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MinCOP * 100);
+                    WPleistHeiz.value_as_int = 800;//(int)(dataPumpForThisData.MinHC * 100);
+                    WPleistCOP.value_as_int = 800;//(int)(dataPumpForThisData.MinCOP * 100);
                     typeData++;
                     break;
                 case 1:
-                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MidHC * 100);
-                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MidCOP * 100);
+                    WPleistHeiz.value_as_int = 800;// (int)(dataPumpForThisData.MidHC * 100);
+                    WPleistCOP.value_as_int = 800; //(int)(dataPumpForThisData.MidCOP * 100);
                     typeData++;
                     break;
                 case 2:
-                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MaxHC * 100);
-                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MaxCOP * 100);
+                    WPleistHeiz.value_as_int = 800; //(int)(dataPumpForThisData.MaxHC * 100);
+                    WPleistCOP.value_as_int = 800;//(int)(dataPumpForThisData.MaxCOP * 100);
                     typeData = 0;
                     break;
                 default:
@@ -169,7 +167,7 @@ namespace TestExel.Services
         //Обновляем большой хэш и переключаемся на следущую температуру и климат
         private void UpdateBigHash(int Idnid, int wpId, ref int Grad, ref int typeClimat, string hash, ref string bigHash, ref bool[] upBigHash)
         {
-            if (_pumpRepositoryForDB.GetCountLeavesById(Idnid + 1) == 7)
+            if (_pumpRepositoryForDB.GetCountLeavesById(Idnid + 1)!=6)
             {
                 bigHash += hash + "#";
 

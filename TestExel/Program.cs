@@ -50,16 +50,14 @@ class Program
         
 
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
-        int a = 0;
         foreach (var pump in standartPumps)
         {
-            pumpServiceForDB.GoalLogic(pump,ref a);
-            
+            pumpServiceForDB.GoalLogic(pump);
+
         }
 
-        Console.WriteLine("Old data pumps = "+ a);
 
-        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF10ANB");
+        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF08ANB");
         //pumpServiceForDB.GoalLogic(pump);
 
         stopwatch.Stop();
