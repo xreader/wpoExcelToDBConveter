@@ -36,17 +36,24 @@ class Pump
     private int[] GetAllTZ(string cellLetter,ref int firstNum)
     {
         List<int> dataArray = new List<int>();
-        
+        var num = firstNum;
         var lastTz = _sheet.Cell(cellLetter + (firstNum - 1)).GetString();
         var tz ="";
         if (lastTz == "" || lastTz== "Quelle")
+        {
             tz = _sheet.Cell(cellLetter + firstNum).GetString();
+            while(tz == "")
+            {
+                num++;
+                tz = _sheet.Cell(cellLetter + num).GetString();
+            }
+        }            
         else
         {
             tz = lastTz;
-            firstNum--;
+            num--;
         }
-        var num = firstNum;
+        firstNum = num;
 
         while (!string.IsNullOrWhiteSpace(tz))
         {

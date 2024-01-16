@@ -33,6 +33,8 @@ class Program
         var standartPumps = pumpService.CreateListStandartPumps();
         var oldPumps = pumpService.GetAllPumpsFromExel();
 
+        //var myPump = oldPumps.Where(x => x.Name == "YKF30CRB");
+
         int[] outTempMidFor35 = { -25, -10, -7, 2, 7, 12 };
         int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
         pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor35, inTempMidFor35, 35, "2");
@@ -43,22 +45,22 @@ class Program
         int[] outTempColdFor35 = { -25, -22, -15, -7, 2, 7, 12 };
         int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
         pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor35, inTempColdFor35, 35, "1");
-        int[] outTempColdFor55 = { -20, -15, -7, 2, 7, 12 };
-        int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
+        int[] outTempColdFor55 = { -20, -15,-10, -7, 2, 7, 12 };
+        int[] inTempMidCold55 = { 55, 55,55, 44, 37, 32, 30 };
         pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
 
 
 
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
-        foreach (var pump in standartPumps)
-        {
-            pumpServiceForDB.GoalLogic(pump);
+        //foreach (var pump in standartPumps)
+        //{
+        //    pumpServiceForDB.GoalLogic(pump);
 
-        }
+        //}
 
 
-        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF07CNC");
-        //pumpServiceForDB.GoalLogic(pump);
+        var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF30CRB");
+        pumpServiceForDB.GoalLogic(pump);
 
         stopwatch.Stop();
 
