@@ -57,7 +57,7 @@ class Program
         }
 
 
-        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF05CNC");
+        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF07CNC");
         //pumpServiceForDB.GoalLogic(pump);
 
         stopwatch.Stop();

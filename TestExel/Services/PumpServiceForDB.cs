@@ -80,7 +80,7 @@ namespace TestExel.Services
                                             }
                                             else
                                             {
-                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, hash.ToString(), ref bigHash, ref upData);
+                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, hash.ToString(), ref bigHash, ref upData, (int)WPleistVTemp.value_as_int, (int)RefKlimazone14825.value_as_int);
                                             }
                                         }
                                     }
@@ -97,7 +97,7 @@ namespace TestExel.Services
                                             }
                                             else
                                             {
-                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode2.value, ref bigHash, ref upData);
+                                                UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode2.value, ref bigHash, ref upData, (int)WPleistVTemp.value_as_int, (int)RefKlimazone14825.value_as_int);
                                             }
                                         }
                                         
@@ -117,7 +117,7 @@ namespace TestExel.Services
                                 }
                                 else
                                 {
-                                    UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode.value, ref bigHash, ref upData);
+                                    UpdateBigHash(Idnid, wpId, ref Grad, ref typeClimat, Gui14825Hashcode.value, ref bigHash, ref upData, (int)WPleistVTemp.value_as_int, (int)RefKlimazone14825.value_as_int);
                                 }
 
                                 
@@ -165,7 +165,7 @@ namespace TestExel.Services
         }
 
         //Обновляем большой хэш и переключаемся на следущую температуру и климат
-        private void UpdateBigHash(int Idnid, int wpId, ref int Grad, ref int typeClimat, string hash, ref string bigHash, ref bool[] upBigHash)
+        private void UpdateBigHash(int Idnid, int wpId, ref int Grad, ref int typeClimat, string hash, ref string bigHash, ref bool[] upBigHash, int gradInLeave, int typeClimatInLeaves)
         {
             if (_pumpRepositoryForDB.GetCountLeavesById(Idnid + 1)!=6)
             {
@@ -191,7 +191,7 @@ namespace TestExel.Services
                     }
                    
                 }                
-                Grad = 55;
+                //Grad = 55;
             }
             else if (Grad == 55 && typeClimat == 1)
             {
@@ -212,8 +212,8 @@ namespace TestExel.Services
                         Console.WriteLine("------Dont have node in DB, BigHash == null");
                     }
                 }
-                Grad = 35;
-                typeClimat = 2;
+                //Grad = 35;
+                //typeClimat = 2;
             }
             else if (Grad == 35 && typeClimat == 2)
             {
@@ -234,7 +234,7 @@ namespace TestExel.Services
                         Console.WriteLine("------Dont have node in DB, BigHash == null");
                     }
                 }
-                Grad = 55;
+                //Grad = 55;
             }
             else if (Grad == 55 && typeClimat == 2)
             {
@@ -255,9 +255,11 @@ namespace TestExel.Services
                         Console.WriteLine("------Dont have node in DB, BigHash == null");
                     }
                 }
-                Grad = 35;
-                typeClimat = 1;
+                //Grad = 35;
+                //typeClimat = 1;
             }
+            Grad = gradInLeave;
+            typeClimat = typeClimatInLeaves;
             if (_pumpRepositoryForDB.GetCountLeavesById(Idnid + 1) == 6)
             {
                 bigHash = "" + hash + "#";
