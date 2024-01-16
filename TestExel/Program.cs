@@ -52,15 +52,15 @@ class Program
 
 
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
-        //foreach (var pump in standartPumps)
-        //{
-        //    pumpServiceForDB.GoalLogic(pump);
+        foreach (var pump in standartPumps)
+        {
+            pumpServiceForDB.GoalLogic(pump);
 
-        //}
+        }
 
 
-        var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF30CRB");
-        pumpServiceForDB.GoalLogic(pump);
+        //var pump = standartPumps.FirstOrDefault(x => x.Name == "YKF07CNC");
+        //pumpServiceForDB.GoalLogic(pump);
 
         stopwatch.Stop();
 

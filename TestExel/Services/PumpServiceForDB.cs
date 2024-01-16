@@ -38,10 +38,14 @@ namespace TestExel.Services
                     string bigHash = "";
                     var wpId = wp.nodeid_fk_nodes_nodeid; //находим его айди
                     var Idnid = wpId + 1;
-                    while (_pumpRepositoryForDB.GetCountLeavesById(Idnid) != 6)
-                    {
-                        Idnid++;
-                    }
+                    if (wpId == 139078)
+                        Idnid = 140565;
+                    else
+                        while (_pumpRepositoryForDB.GetCountLeavesById(Idnid) != 6)
+                        {
+                            Idnid++;
+                        }
+                    
                     var a = true;
                     //while ((_pumpRepositoryForDB.GetCountLeavesById(Idnid) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid+1) == 6 || _pumpRepositoryForDB.GetCountLeavesById(Idnid)==0)
                     //    && !upData[0] && !upData[1] && !upData[2] && !upData[3]) // Всегда 6 записей в которых храняться данные 
@@ -124,6 +128,8 @@ namespace TestExel.Services
                             }
                         }
                         Idnid++;
+                        if (Idnid == 136713 && wp.value == "YKF07CNC")
+                            Idnid = 140643;
                         if (upData[0] && upData[1] && upData[2] && upData[3])
                         {
                             a = false;
