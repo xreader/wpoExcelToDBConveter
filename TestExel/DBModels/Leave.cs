@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestExel.DBModels
 {
-    public class Leaves
+    public class Leave
     {
         public int objectid_fk_properties_objectid { get; set; }
         public int nodeid_fk_nodes_nodeid { get; set; }

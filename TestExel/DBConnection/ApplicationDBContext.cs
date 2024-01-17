@@ -15,10 +15,11 @@ namespace TestExel.DBConnection
 
         }
         
-        public DbSet<Leaves> leaves { get; set; }
+        public DbSet<Leave> leaves { get; set; }
+        public DbSet<Node>  nodes { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Leaves>().HasKey(l => new { l.objectid_fk_properties_objectid, l.nodeid_fk_nodes_nodeid });
+            modelBuilder.Entity<Leave>().HasKey(l => new { l.objectid_fk_properties_objectid, l.nodeid_fk_nodes_nodeid });
 
             base.OnModelCreating(modelBuilder);
         }

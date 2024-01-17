@@ -54,8 +54,8 @@ class Program
         var pumpServiceForDB = new PumpServiceForDB("D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db");
         foreach (var pump in standartPumps)
         {
-            pumpServiceForDB.GoalLogic(pump);
-
+            //pumpServiceForDB.GoalLogic(pump);
+            pumpServiceForDB.MyNewLogic(pump);
         }
 
 
