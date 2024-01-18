@@ -27,19 +27,11 @@ class Program
 
         Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
         string dataBasePath = Console.ReadLine();
-
-        // Створити об'єкт Stopwatch
-        Stopwatch stopwatch = new Stopwatch();
-
-        // Почати вимірювання часу
-        stopwatch.Start();
        
         var pumpService = new PumpService(excelFilePath);
 
         var standartPumps = pumpService.CreateListStandartPumps();
         var oldPumps = pumpService.GetAllPumpsFromExel();
-
-        //var myPump = oldPumps.Where(x => x.Name == "YKF30CRB");
 
         int[] outTempMidFor35 = { -25, -10, -7, 2, 7, 12 };
         int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
@@ -63,16 +55,7 @@ class Program
             await pumpServiceForDB.ChangeDataInDbByExcelData(pump);
         }
 
-        stopwatch.Stop();
-
-        // Отримати час, що пройшов
-        TimeSpan elapsedTime = stopwatch.Elapsed;
-
-        // Вивести результат
-        Console.WriteLine($"Час виконання: {elapsedTime.TotalMilliseconds} мс");
-
-
-
+        Console.ReadLine();
     }
 }
     
