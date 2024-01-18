@@ -24,9 +24,9 @@ namespace TestExel.Services
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
         }
-        public void MyNewLogic(StandartPump pump)
+        public async Task ChangeDataInDbByExcelData(StandartPump pump)
         {
-            var wpList = _leaveRepository.FindLeaveByNamePump(pump.Name);
+            var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
             foreach (var wp in wpList)
             {
                 var typeData = 0;
@@ -36,47 +36,58 @@ namespace TestExel.Services
                     int gradInseide = 35;
                     string bigHash = "";
                     var wpId = wp.nodeid_fk_nodes_nodeid;
-                    var leavesIdWithOldDataList = _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//список IdLeaves которые надо менять
+                    var leavesIdWithOldDataList = await _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
                     var actuelIndexLeaveIdInList = 0;
                     foreach (var leaveIdWithOldData in leavesIdWithOldDataList)
                     {
-                        var dataWp = _leaveRepository.GetLeavesById(leaveIdWithOldData);
-                        var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351).value_as_int;              //Находим значение температуры на улице
-                        var WPleistVTemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;              //Находим значение температуры внутри
-                        var RefKlimazone14825 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356).value_as_int;         //Находим значение типа климата
-                        var Gui14825Hashcode = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);                       //Находим leave с хєшкодом
+                        var dataWp = await _leaveRepository.GetLeavesById(leaveIdWithOldData);
+                        var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351).value_as_int;              //Finding the temperature outside
+                        var WPleistVTemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;              //Finding the temperature inside
+                        var RefKlimazone14825 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356).value_as_int;         //Finding the climate type value
+                        var Gui14825Hashcode = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);                       //Find leave with hashcode
                         if (WPleistATemp != null)
                         {
-                            //Если есть даные с такой температурой на улице в модели которую мы получили после конвертации и стандартизации
+                            //If there is data with such an outdoor temperature in the model that we received after conversion and standardization
                             if (pump.Data.TryGetValue((int)WPleistATemp, out var myPumpData))
-                            {                                
+                            {
                                 if (WPleistVTemp != null && RefKlimazone14825 != null)
                                 {
-                                    //получаем даныне из стандартизованой модели с нужным климатом и температурой
+                                    //we obtain data from a standardized model with the desired climate and temperature
                                     var dataPumpForThisData = myPumpData.FirstOrDefault(x => x.ForTemp == WPleistVTemp && x.Climate == RefKlimazone14825.ToString());
                                     if (dataPumpForThisData != null)
                                     {
-                                        var WPleistHeiz = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012); //leave с данными для P
-                                        var WPleistCOP = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221); // leave c данными для COP
+                                        var WPleistHeiz = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012); //leave with data for P
+                                        var WPleistCOP = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);  //leave with data for COP
                                         if (WPleistHeiz != null && WPleistCOP != null && Gui14825Hashcode != null)
-                                        { //Меняем даныне для P и COP 
+                                        { //Changing data for P and COP
+                                            if (WPleistVTemp != gradInseide && RefKlimazone14825 != typeClimat)
+                                                typeData = 0;
                                             ChangeDataForSendToDB(ref typeData, WPleistHeiz, WPleistCOP, dataPumpForThisData);
                                             _leaveRepository.UpdateLeaves(WPleistHeiz);
                                             _leaveRepository.UpdateLeaves(WPleistCOP);
-                                            //формируем хэш и обновляем
+                                            //form a hash and update
                                             var str = WPleistATemp + "#" + WPleistHeiz.value_as_int + "#" + WPleistCOP.value_as_int;
                                             int hash = GetHashCode(str);
                                             Gui14825Hashcode.value = hash.ToString();
-                                            _leaveRepository.UpdateLeaves(Gui14825Hashcode);                                            
+                                            _leaveRepository.UpdateLeaves(Gui14825Hashcode);
                                         }
-                                    }                                    
+                                    }
+                                    else
+                                        Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
                                 }
                             }
-                            //Создание длиного хєша и его отправка при заполнении
+                            else
+                                Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
+                            //Create a long hash and send it when filled
                             if (WPleistVTemp == gradInseide && RefKlimazone14825 == typeClimat && leavesIdWithOldDataList.Count - 1 != actuelIndexLeaveIdInList)
                                 bigHash += Gui14825Hashcode.value + "#";
                             else
-                                UpdateBigHash(leavesIdWithOldDataList.Count, actuelIndexLeaveIdInList, wpId, ref gradInseide, ref typeClimat, Gui14825Hashcode.value, ref bigHash, (int)WPleistVTemp, (int)RefKlimazone14825);
+                            {
+                                var changeValue = await UpdateBigHash(leavesIdWithOldDataList.Count, actuelIndexLeaveIdInList, wpId, gradInseide, typeClimat, Gui14825Hashcode.value, bigHash, (int)WPleistVTemp, (int)RefKlimazone14825);
+                                gradInseide = changeValue.Item1;
+                                typeClimat = changeValue.Item2;
+                                bigHash = changeValue.Item3;                                
+                            }
 
                         }
                         actuelIndexLeaveIdInList++;
@@ -85,23 +96,23 @@ namespace TestExel.Services
                     Console.WriteLine("Pump -" + wp.value + "  Update!");
                     Console.WriteLine();
                     Console.WriteLine();
-                    Task.Delay(2000).Wait();
+                    Task.Delay(1000).Wait();
                 }
             }
         }
-        //Метод для обновления длиного хэша и переключения на другой климат и температуру
-        private void UpdateBigHash(int leavesIdCount, int actuelIndexLeaveIdInList, int wpId, ref int gradInseide, ref int typeClimat, string hash, ref string bigHash, int gradInseideInLeave, int typeClimatInLeaves)
+        //Method for updating a long hash and switching to a different climate and temperature
+        private async Task<(int, int, string)> UpdateBigHash(int leavesIdCount, int actuelIndexLeaveIdInList, int wpId, int gradInseide, int typeClimat, string hash, string bigHash, int gradInseideInLeave, int typeClimatInLeaves)
         {
             if (leavesIdCount-1 == actuelIndexLeaveIdInList)
                 bigHash += hash + "#";
 
-            var bigHashDB = GetBigHashDB(wpId, gradInseide, typeClimat);
+            var bigHashDB = await GetBigHashDB(wpId, gradInseide, typeClimat);
             if (bigHash.Count() >= 150 && bigHashDB != null)
             {
                 bigHashDB.value = bigHash;
-                if (_leaveRepository.UpdateLeaves(bigHashDB))
+                if (await _leaveRepository.UpdateLeaves(bigHashDB))
                 {
-                    Console.WriteLine($"------Up Big Hash For {gradInseide} gradInseide And {(typeClimat == 1 ? "Cold" : "Mid")}");
+                    Console.WriteLine($"------Up Big Hash For {gradInseide} Grad And {(typeClimat == 1 ? "Cold" : "Mid")}");
                 }
                 else
                 {
@@ -112,25 +123,26 @@ namespace TestExel.Services
             gradInseide = gradInseideInLeave;
             typeClimat = typeClimatInLeaves;
             bigHash = "" + hash + "#";
+            return (gradInseide, typeClimat, bigHash);
         }
 
-        //Метод для получения длиного хэша с базы данных
-        private Leave GetBigHashDB(int wpId, int gradInseide, int typeClimat)
+        //Method for getting a long hash from the database
+        private async Task<Leave> GetBigHashDB(int wpId, int gradInseide, int typeClimat)
         {
             switch (gradInseide)
             {
                 case 35:
-                    return typeClimat == 1 ? _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId)    //если холодный климат
-                                            : _leaveRepository.GetBigHashFor35GradForMittelKlimaByWpId(wpId);  //если средний климат
+                    return typeClimat == 1 ?  await _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
+                                            : await _leaveRepository.GetBigHashFor35GradForMittelKlimaByWpId(wpId);  //if the climate is average
                 case 55:
-                    return typeClimat == 1 ? _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId)    //если холодный климат
-                                            : _leaveRepository.GetBigHashFor55GradForMittelKlimaByWpId(wpId);  //если средний климат
+                    return typeClimat == 1 ?  await _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
+                                            : await _leaveRepository.GetBigHashFor55GradForMittelKlimaByWpId(wpId);  //if the climate is average
                 default:
                     return null;
             }
         }
 
-        //Метод для изменения данных в модели перед отправкой в базу
+        //Method for changing data in the model before sending it to the database
         private void ChangeDataForSendToDB(ref int typeData, Leave WPleistHeiz, Leave WPleistCOP, StandartDataPump dataPumpForThisData)
         {
             switch (typeData)
@@ -154,7 +166,7 @@ namespace TestExel.Services
                     break;
             }
         }
-        //Метод для хэширования строки с переносом в 5 бит
+        //Method for hashing a string with a carry of 5 bits
         private int GetHashCode(string s)
         {
             int hash = 0;

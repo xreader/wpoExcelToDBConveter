@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,23 +17,23 @@ namespace TestExel.Repository
             _context = context;
         }
 
-        public List<Leave> FindLeaveByNamePump(string pumpName) => _context.leaves.Where(x => x.value.Contains(pumpName) && x.objectid_fk_properties_objectid== 1320).ToList();
-        public int GetCountLeavesById(int id) => _context.leaves.Count(x => x.nodeid_fk_nodes_nodeid == id);  
-        public List<Leave> GetLeavesById(int id) => _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToList();
+        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => x.value.Contains(pumpName) && x.objectid_fk_properties_objectid== 1320).ToListAsync();
+        public async Task<int> GetCountLeavesById(int id) => await _context.leaves.CountAsync(x => x.nodeid_fk_nodes_nodeid == id);  
+        public async Task<List<Leave>> GetLeavesById(int id) => await _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToListAsync();
 
-        public Leave GetBigHashFor35GradForKaltesKlimaByWpId(int wpId) => _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
-        public Leave GetBigHashFor55GradForKaltesKlimaByWpId(int wpId) => _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
-        public Leave GetBigHashFor35GradForMittelKlimaByWpId(int wpId) => _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
-        public Leave GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => _context.leaves.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor35GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor55GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor35GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
 
-        public bool UpdateLeaves(Leave leaves)
+        public async Task<bool> UpdateLeaves(Leave leaves)
         {
             _context.Update(leaves);
-            return SaveContext();
+            return await SaveAsync();
         }
-        public bool SaveContext()
+        public async Task<bool> SaveAsync()
         {
-            var saved = _context.SaveChanges();
+            var saved = await _context.SaveChangesAsync();
             return saved > 0 ? true : false;
         }
     }

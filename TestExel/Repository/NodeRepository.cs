@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,9 @@ namespace TestExel.Repository
         {
             _context = context;
         }
-        public List<int> GetIdLeavesWithDataByPumpId(int pumpId) => _context.nodes.Where(x=> x.parentid_fk_nodes_nodeid == pumpId && x.typeid_fk_types_typeid == 25).OrderBy(x=>x.nodeid).Select(x=>x.nodeid).ToList();
+        public async Task<List<int>> GetIdLeavesWithDataByPumpId(int pumpId) => await _context.nodes.Where(x=> x.parentid_fk_nodes_nodeid == pumpId && x.typeid_fk_types_typeid == 25)
+                                                                                  .OrderBy(x=>x.nodeid)
+                                                                                  .Select(x=>x.nodeid)
+                                                                                  .ToListAsync();
     }
 }
