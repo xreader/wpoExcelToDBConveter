@@ -8,7 +8,8 @@ namespace TestExel.StandartModels
 {
     internal class StandartDataPump
     {
-        public int Temp { get; set; }
+        public int ForTemp { get; set; }
+        public int FlowTemp { get; set; }
         public string Climate { get; set; }
         public double MinHC { get; set; }
         public double MidHC { get; set; }
