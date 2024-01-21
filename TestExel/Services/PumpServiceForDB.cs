@@ -24,7 +24,15 @@ namespace TestExel.Services
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
         }
-        public async Task ChangeDataInDbByExcelData(StandartPump pump)
+        public async Task ChangeLeistungsdatenInDbByExcelData(StandartPump pump)
+        {
+
+        }
+
+
+
+        //Update in DB this data  EN 14825 LG
+        public async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump)
         {
             var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
             foreach (var wp in wpList)
@@ -158,8 +166,8 @@ namespace TestExel.Services
                     typeData++;
                     break;
                 case 2:
-                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MaxHC * 100);
-                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MaxCOP * 100);
+                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MidHC * 100);
+                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MidCOP * 100);
                     typeData = 0;
                     break;
                 default:

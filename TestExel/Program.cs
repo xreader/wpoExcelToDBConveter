@@ -52,7 +52,7 @@ class Program
         var pumpServiceForDB = new PumpServiceForDB(dataBasePath);
         foreach (var pump in standartPumps)
         {
-            await pumpServiceForDB.ChangeDataInDbByExcelData(pump);
+            await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
         }
 
         Console.ReadLine();
