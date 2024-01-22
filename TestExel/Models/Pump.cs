@@ -94,7 +94,8 @@ class Pump
                 MaxHC = allData[2],
                 MinCOP = allData[3],
                 MidCOP = allData[4],
-                MaxCOP = allData[5]
+                MaxCOP = allData[5],
+                MaxVorlauftemperatur = (int)allData[6]
             });
 
         }

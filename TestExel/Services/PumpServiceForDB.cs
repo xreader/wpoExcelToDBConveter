@@ -26,8 +26,25 @@ namespace TestExel.Services
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(StandartPump pump)
         {
-
+            var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            foreach (var wp in wpList)
+            {
+                var wpId = wp.nodeid_fk_nodes_nodeid;
+                var leavesIdWithOldLeistungdatenList = await _nodeRepository.GetIdLeavesWithLeistungsdatenByPumpId(wpId);//list of IdLeaves that need to be changed
+                foreach (var leaveIdWithOldLeistungdaten in leavesIdWithOldLeistungdatenList)
+                {
+                    var leistungdatenWp = await _leaveRepository.GetLeavesById(leaveIdWithOldLeistungdaten);
+                    var WPleistATemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1010).value_as_int;             //Finding the temperature outside
+                    var WPleistVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;             //Finding the temperature inside
+                    var WPleistHeiz = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012).value_as_int;              //Finding the Heizleistung - P
+                    var WPleistCOP = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221).value_as_int;               //Finding the COP
+                    var WPleistKaelte = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013).value_as_int;            //Finding the Kealteleistung/Охлаждающая способность
+                    var WPleistInput = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014).value_as_int;             //Finding the Leistungsaufnahme / потребляємая мощьности
+                    var WPleistMaxVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1015).value_as_int;          //Finding the Max Vorlauft Temperatur/Max Inseide Temp
+                }
+            }
         }
+
 
 
 

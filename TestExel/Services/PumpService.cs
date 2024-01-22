@@ -27,17 +27,10 @@ namespace TestExel.Services
 
         public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
         {
-
-            //var oldPump = oldPumps[7];
-
             foreach (var oldPump in oldPumps)
             {
                 //Get the pump data dictionary
-                Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
-
-                //var result = AddMinOutTempWhenPumpWorked(oldPump, outTemps, flowTemps);
-                // var outTemps2 = result.Item1;
-                //var flowTemps2 = result.Item2;
+                Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;                
                 if (standartPumps.Any(x => x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
@@ -101,7 +94,8 @@ namespace TestExel.Services
                 MaxHC = dataPump.MaxHC,
                 MinCOP = dataPump.MinCOP < 1 ? 1 : dataPump.MinCOP,
                 MidCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP,
-                MaxCOP = dataPump.MaxCOP < 1 ? 1 : dataPump.MaxCOP
+                MaxCOP = dataPump.MaxCOP < 1 ? 1 : dataPump.MaxCOP,
+                MaxVorlauftemperatur = dataPump.MaxVorlauftemperatur
             };
         }
         //Creating a new data object according to the standard when it is not in the table
@@ -121,7 +115,8 @@ namespace TestExel.Services
                 MaxHC = Math.Round(oldDataWithHighGrad.MaxHC - dif * (oldDataWithHighGrad.MaxHC - oldDataWithLowGrad.MaxHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MinCOP = minCop < 1 ? 1 : minCop,
                 MidCOP = midCop < 1 ? 1 : midCop,
-                MaxCOP = maxCop < 1 ? 1 : maxCop
+                MaxCOP = maxCop < 1 ? 1 : maxCop,
+                MaxVorlauftemperatur = oldDataWithLowGrad.MaxVorlauftemperatur
             };
         }
         //Calculates data for the pump when we do not have data at this temperature outside
@@ -162,26 +157,13 @@ namespace TestExel.Services
             }
             else
             {
-                //var maxKeyBeforeTarget = oldDataPump
-                //        .Where(x => x.Temp < flowTemp)
-                //        .Select(x => x.Temp)
-                //        .DefaultIfEmpty()
-                //        .Max();
-                //var minKeyBeforeTarget = oldDataPump
-                //       .Where(x => x.Temp > flowTemp)
-                //       .Select(x => x.Temp)
-                //       .DefaultIfEmpty()
-                //       .Min();
-                //if(maxKeyBeforeTarget != (int)default && minKeyBeforeTarget != (int)default)
-                //{
-
-                //}
                 var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
                 var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
 
                 if (oldDataWithHighGrad != null && oldDataWithLowGrad != null)
                 {
                     standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, forTemp, climat);
+                    
                     standartDataPumpChanged = true;
                 }
             }
@@ -233,8 +215,8 @@ namespace TestExel.Services
                 var worksheet = workbook.Worksheet(i);
                 var pump = new Pump(worksheet);
                 pump.Name = worksheet.Name;
-                pump.GetData(2, "B", "C", "H", 35);
-                pump.GetData(13, "B", "C", "H", 55);
+                pump.GetData(2, "B", "C", "I", 35);
+                pump.GetData(13, "B", "C", "I", 55);
                 if (pump != null && pump.Name != "")
                     pumps.Add(pump);
 

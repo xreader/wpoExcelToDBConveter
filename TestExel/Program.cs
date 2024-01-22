@@ -23,11 +23,12 @@ class Program
     static async Task Main()
     {
         Console.WriteLine("Write full path to Excel File:");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx"
-        string excelFilePath = Console.ReadLine();
+        string excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx";//Console.ReadLine();
 
         Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
-        string dataBasePath = Console.ReadLine();
-       
+        string dataBasePath = "D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";//Console.ReadLine();
+
+
         var pumpService = new PumpService(excelFilePath);
 
         var standartPumps = pumpService.CreateListStandartPumps();
