@@ -26,5 +26,21 @@ namespace TestExel.Repository
                                                                                   .OrderBy(x => x.nodeid)
                                                                                   .Select(x => x.nodeid)
                                                                                   .ToListAsync();
+        public async Task<Node> GetNodeByIdAsync(int idNode) => await _context.nodes.FirstOrDefaultAsync(x => x.nodeid == idNode);
+        public async Task<bool> DeleteNode(Node node)
+        {
+            _context.nodes.Remove(node);
+            return await SaveAsync();
+        }
+        public async Task<bool> CreateNode(Node node)
+        {
+            await _context.nodes.AddAsync(node);
+            return await SaveAsync();
+        }
+        public async Task<bool> SaveAsync()
+        {
+            var saved = await _context.SaveChangesAsync();
+            return saved > 0 ? true : false;
+        }
     }
 }

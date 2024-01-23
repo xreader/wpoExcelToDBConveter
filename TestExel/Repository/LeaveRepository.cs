@@ -37,6 +37,11 @@ namespace TestExel.Repository
         public async Task<Leave> GetBigHashFor35GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
         public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);        
         
+        public async Task<bool> CreateLeave(Leave leave)
+        {
+            await _context.leaves.AddAsync(leave);
+            return await SaveAsync();
+        }
         public async Task<bool> DeleteLeaves(List<List<Leave>> leaves)
         {
             foreach(var listLeaves in leaves)
