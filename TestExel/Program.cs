@@ -55,11 +55,12 @@ class Program
         //{
         //    await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
         //}
+       
 
-        var pump = oldPumps.FirstOrDefault(x=>x.Name == "YKF12CRC");
-        await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(pump);
-
-
+        foreach (var pump in oldPumps)
+        {
+            await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(pump);
+        }
 
         Console.ReadLine();
     }
