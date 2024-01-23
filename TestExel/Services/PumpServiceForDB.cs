@@ -24,24 +24,82 @@ namespace TestExel.Services
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
         }
-        public async Task ChangeLeistungsdatenInDbByExcelData(StandartPump pump)
+        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
         {
             var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;
                 var leavesIdWithOldLeistungdatenList = await _nodeRepository.GetIdLeavesWithLeistungsdatenByPumpId(wpId);//list of IdLeaves that need to be changed
-                foreach (var leaveIdWithOldLeistungdaten in leavesIdWithOldLeistungdatenList)
-                {
-                    var leistungdatenWp = await _leaveRepository.GetLeavesById(leaveIdWithOldLeistungdaten);
-                    var WPleistATemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1010).value_as_int;             //Finding the temperature outside
-                    var WPleistVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;             //Finding the temperature inside
-                    var WPleistHeiz = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012).value_as_int;              //Finding the Heizleistung - P
-                    var WPleistCOP = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221).value_as_int;               //Finding the COP
-                    var WPleistKaelte = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013).value_as_int;            //Finding the Kealteleistung/Охлаждающая способность
-                    var WPleistInput = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014).value_as_int;             //Finding the Leistungsaufnahme / потребляємая мощьности
-                    var WPleistMaxVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1015).value_as_int;          //Finding the Max Vorlauft Temperatur/Max Inseide Temp
+                //Get all leave in db for this WP                
+                var listWithleavesWithListOldLeistungdaten = await _leaveRepository.GetLeavesByIdList(leavesIdWithOldLeistungdatenList);
+
+                //Ищем список записей где есть данные которые надо изменить и их количество, если количество больше 1 то изменяем первое остальные удаляем                
+                foreach (var newDataDictionary in pump.Data)
+                {                    
+                    var listWithleavesWithListOldLeistungdatenForCurrentTempOut = listWithleavesWithListOldLeistungdaten
+                                    .Where(list => list.Any(leave => leave.value_as_int == newDataDictionary.Key && leave.objectid_fk_properties_objectid == 1010))                                    
+                                    .ToList();
+                    if(listWithleavesWithListOldLeistungdatenForCurrentTempOut != null)
+                    {
+                        foreach (var newData in newDataDictionary.Value)
+                        {
+                            var listWithLeavesForUpdate = listWithleavesWithListOldLeistungdatenForCurrentTempOut
+                                         .Where(list => list.Any(leave => leave.value_as_int == newData.Temp && leave.objectid_fk_properties_objectid == 1011))
+                                         .Where(list => list.Any(leave => leave.value_as_int == newData.MaxVorlauftemperatur && leave.objectid_fk_properties_objectid == 1015))
+                                         .ToList();
+                            if(listWithLeavesForUpdate != null)
+                            {
+                                //Берем первую запись для обнавления, !последущие повторные необходимо удалить! и надо удалить как из базы так и из списка чтоб быстрее работало
+                                var leavesForUpdate = listWithLeavesForUpdate[0];                                
+                                
+                                var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);              //Finding the Heizleistung - P
+                                WPleistHeiz.value_as_int = (int)(newData.MidHC * 100);
+                                _leaveRepository.UpdateLeaves(WPleistHeiz);
+                                
+                                var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);               //Finding the COP
+                                WPleistCOP.value_as_int = (int)(newData.MidCOP * 100);
+                                _leaveRepository.UpdateLeaves(WPleistCOP);
+                                
+                                var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);             //Finding the Leistungsaufnahme / потребляємая мощьности
+                                WPleistAuf.value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100);
+                                _leaveRepository.UpdateLeaves(WPleistAuf);
+
+                                var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);            //Finding the Kealteleistung/Охлаждающая способность
+                                WPleistKaelte.value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100);
+                                _leaveRepository.UpdateLeaves(WPleistKaelte);
+
+                                listWithLeavesForUpdate.Remove(leavesForUpdate);
+                                _leaveRepository.DeleteLeaves(listWithLeavesForUpdate);
+                                
+                            }
+                            //Если нет записей с такой температруой внутри и максимальной температурой внутри(надо создавать запись)
+                            else
+                            {
+
+                            }
+                            Console.WriteLine();
+                        }
+                    }
+                    //Если нет вообще записей с такой температурой на улице(надо создавать запись)
+                    else
+                    {
+
+                    }
                 }
+
+
+                //foreach (var leaveIdWithOldLeistungdaten in leavesIdWithOldLeistungdatenList)
+                //{
+                //    var leistungdatenWp = await _leaveRepository.GetLeavesById(leaveIdWithOldLeistungdaten);
+                //    var WPleistATemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1010).value_as_int;             //Finding the temperature outside
+                //    var WPleistVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;             //Finding the temperature inside
+                //    var WPleistHeiz = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012).value_as_int;              //Finding the Heizleistung - P
+                //    var WPleistCOP = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221).value_as_int;               //Finding the COP
+                //    var WPleistKaelte = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013).value_as_int;            //Finding the Kealteleistung/Охлаждающая способность
+                //    var WPleistInput = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014).value_as_int;             //Finding the Leistungsaufnahme / потребляємая мощьности
+                //    var WPleistMaxVTemp = leistungdatenWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1015).value_as_int;          //Finding the Max Vorlauft Temperatur/Max Inseide Temp
+                //}
             }
         }
 

@@ -51,10 +51,15 @@ class Program
 
 
         var pumpServiceForDB = new PumpServiceForDB(dataBasePath);
-        foreach (var pump in standartPumps)
-        {
-            await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
-        }
+        //foreach (var pump in standartPumps)
+        //{
+        //    await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
+        //}
+
+        var pump = oldPumps.FirstOrDefault(x=>x.Name == "YKF12CRC");
+        await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(pump);
+
+
 
         Console.ReadLine();
     }
