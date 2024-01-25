@@ -30,47 +30,54 @@ namespace TestExel.Services
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;
+                //Get all leave Id in db for this WP 
                 var leavesIdWithOldLeistungdatenList = await _nodeRepository.GetIdLeavesWithLeistungsdatenByPumpId(wpId);//list of IdLeaves that need to be changed
                 //Get all leave in db for this WP                
                 var listWithleavesWithListOldLeistungdaten = await _leaveRepository.GetLeavesByIdList(leavesIdWithOldLeistungdatenList);
 
-                //Ищем список записей где есть данные которые надо изменить и их количество, если количество больше 1 то изменяем первое остальные удаляем                
+                //We sort through the data we received from Excel
                 foreach (var newDataDictionary in pump.Data)
                 {
                     foreach (var newData in newDataDictionary.Value)
                     {
+                        //We are looking for a list of records where there is data that needs to be changed and their quantity, if the number is more than 1, then we change the first one and delete the rest
                         var listWithLeavesForUpdate = listWithleavesWithListOldLeistungdaten
                                      .Where(list => list.Any(leave => leave.value_as_int == newDataDictionary.Key && leave.objectid_fk_properties_objectid == 1010))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.Temp && leave.objectid_fk_properties_objectid == 1011))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.MaxVorlauftemperatur && leave.objectid_fk_properties_objectid == 1015))
                                      .ToList();
+                        //If there are such records, we simply update them and delete duplicates
                         if (listWithLeavesForUpdate.Count > 0)
                         {
-                            //Берем первую запись для обнавления, !последущие повторные необходимо удалить! и надо удалить как из базы так и из списка чтоб быстрее работало
+                            //We take the first entry for updating; subsequent repeated ones must be deleted! and must be removed both from the database and from the list
                             var leavesForUpdate = listWithLeavesForUpdate[0];
-
-                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);              //Finding the Heizleistung - P
+                            //Finding the Heizleistung - P and Update
+                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);              
                             WPleistHeiz.value_as_int = (int)(newData.MidHC * 100);
                             await _leaveRepository.UpdateLeaves(WPleistHeiz);
-
-                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);               //Finding the COP
+                            //Finding the COP and Update
+                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);               
                             WPleistCOP.value_as_int = (int)(newData.MidCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistCOP);
-
-                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);             //Finding the Leistungsaufnahme / потребляємая мощьности
+                            //Finding the Leistungsaufnahme and Update
+                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);            
                             WPleistAuf.value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100);
                             await _leaveRepository.UpdateLeaves(WPleistAuf);
-
-                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);            //Finding the Kealteleistung/Охлаждающая способность
+                            //Finding the Kealteleistung and Update
+                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);            
                             WPleistKaelte.value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100);
                             await _leaveRepository.UpdateLeaves(WPleistKaelte);
 
 
-
+                            //We remove from the list with our data what we updated
                             listWithLeavesForUpdate.Remove(leavesForUpdate);
+                            //Now the list contains only duplicate entries that should be removed from the database
                             await _leaveRepository.DeleteLeaves(listWithLeavesForUpdate);
 
+                            //We remove from the list with all entries for this pump those entries that have just been updated 
                             listWithleavesWithListOldLeistungdaten.Remove(leavesForUpdate);
+
+                            //We remove from the list with all the records for this pump those records that were deleted from the database, and also delete the connecting records from the database, that is, Node
                             foreach (var item in listWithLeavesForUpdate)
                             {
                                 listWithleavesWithListOldLeistungdaten.Remove(item);
@@ -79,25 +86,28 @@ namespace TestExel.Services
                             }
 
                         }
-                        //Если нет записей с такой температруой внутри и максимальной температурой внутри(надо создавать запись)
+                        //If there are no records with this temperature inside and the maximum temperature inside (you need to create a record)
                         else
                         {
+                            //Create a linking record
                             Node node = new Node() { typeid_fk_types_typeid = 8, parentid_fk_nodes_nodeid = wpId, licence = 0 };
                             await _nodeRepository.CreateNode(node);
-                            Leave leave1010 = new Leave() { objectid_fk_properties_objectid = 1010, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newDataDictionary.Key };
-                            await _leaveRepository.CreateLeave(leave1010);
-                            Leave leave1011 = new Leave() { objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.Temp };
-                            await _leaveRepository.CreateLeave(leave1011);
-                            Leave leave1012 = new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC * 100) };
-                            await _leaveRepository.CreateLeave(leave1012);
-                            Leave leave1013 = new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100) };
-                            await _leaveRepository.CreateLeave(leave1013);
-                            Leave leave1014 = new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100) };
-                            await _leaveRepository.CreateLeave(leave1014);
-                            Leave leave1015 = new Leave() { objectid_fk_properties_objectid = 1015, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MaxVorlauftemperatur };
-                            await _leaveRepository.CreateLeave(leave1015);
-                            Leave leave1221 = new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidCOP * 100) };
-                            await _leaveRepository.CreateLeave(leave1221);
+                            //We create all the necessary records containing new data
+                            List<Leave> leaves = new List<Leave>
+                            {
+                                new Leave() { objectid_fk_properties_objectid = 1010, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newDataDictionary.Key },
+                                new Leave() { objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.Temp },
+                                new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1015, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MaxVorlauftemperatur },
+                                new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidCOP * 100) }
+                            };
+                            //Add them to the database
+                            foreach (var leave in leaves)
+                            {
+                                await _leaveRepository.CreateLeave(leave);
+                            }
 
                         }
                     }
