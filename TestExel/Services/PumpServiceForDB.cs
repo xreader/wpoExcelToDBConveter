@@ -104,12 +104,16 @@ namespace TestExel.Services
 
 
                 }
-                await _leaveRepository.DeleteLeaves(listWithleavesWithListOldLeistungdaten);
-                foreach (var item in listWithleavesWithListOldLeistungdaten)
-                {
-                    var node = await _nodeRepository.GetNodeByIdAsync(item[0].nodeid_fk_nodes_nodeid);
-                    await _nodeRepository.DeleteNode(node);
-                }
+                //Deletes data that is not in the Excel file
+                //{
+                //    await _leaveRepository.DeleteLeaves(listWithleavesWithListOldLeistungdaten);
+                //    foreach (var item in listWithleavesWithListOldLeistungdaten)
+                //    {
+                //        var node = await _nodeRepository.GetNodeByIdAsync(item[0].nodeid_fk_nodes_nodeid);
+                //        await _nodeRepository.DeleteNode(node);
+                //    }
+
+                //}
 
 
                 Console.WriteLine("Pump -" + wp.value + " Leistungdata Update!");
