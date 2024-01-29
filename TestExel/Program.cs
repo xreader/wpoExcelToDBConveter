@@ -27,7 +27,8 @@ class Program
 
         Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
         string dataBasePath = Console.ReadLine();
-       
+
+
         var pumpService = new PumpService(excelFilePath);
 
         var standartPumps = pumpService.CreateListStandartPumps();
@@ -46,16 +47,36 @@ class Program
         int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
         int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
         pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
-
-
-
+        
+        
         var pumpServiceForDB = new PumpServiceForDB(dataBasePath);
-        foreach (var pump in standartPumps)
-        {
-            await pumpServiceForDB.ChangeDataInDbByExcelData(pump);
-        }
 
-        Console.ReadLine();
+        while (true)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Choose operation: ");
+            Console.WriteLine("1. Update Dataen EN 14825 LG");
+            Console.WriteLine("2. Update Leistungsdaten");
+            var operation = Console.ReadLine();
+            switch (operation)
+            {
+                case "1":
+                    foreach (var pump in standartPumps)
+                    {
+                        await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
+                    }
+                    break;
+                case "2":
+                    foreach (var pump in oldPumps)
+                    {
+                        await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(pump);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Error input");
+                    break;
+            }
+        }      
     }
 }
     
