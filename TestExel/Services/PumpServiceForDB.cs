@@ -24,7 +24,7 @@ namespace TestExel.Services
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
         }
-        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
+        public async Task ChangeLeistungsdatenInDbByExcelData(PumpForYork pump)
         {
             var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
             foreach (var wp in wpList)

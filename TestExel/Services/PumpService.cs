@@ -25,7 +25,7 @@ namespace TestExel.Services
         //provided that the temperature outside is already the same as in the old model and the temperature inside is also at the same temperature outside
         //and so far only for warm climates
 
-        public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
+        public List<StandartPump> GetDataInListStandartPumps(List<StandartPump> standartPumps, List<PumpForYork> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
         {
             foreach (var oldPump in oldPumps)
             {
@@ -55,7 +55,7 @@ namespace TestExel.Services
 
         }
         //Тестовый метод добавляет минимальные температры когда рабоатет насос, нужно модифицировать
-        private (int[], int[]) AddMinOutTempWhenPumpWorked(Pump pump, int[] outTepms, int[] flowTemps)
+        private (int[], int[]) AddMinOutTempWhenPumpWorked(PumpForYork pump, int[] outTepms, int[] flowTemps)
         {
             Dictionary<int, List<DataPump>> data = pump.Data;
             int minOutTemp = outTepms.Min();
@@ -206,14 +206,14 @@ namespace TestExel.Services
             }
         }
         //Get all pumps from Exel
-        public List<Pump> GetAllPumpsFromExel()
+        public List<PumpForYork> GetAllPumpsFromExel()
         {
-            List<Pump> pumps = new List<Pump>();
+            List<PumpForYork> pumps = new List<PumpForYork>();
             var sheetsCount = workbook.Worksheets.Count;
             for (int i = 1; i <= sheetsCount; i++)
             {
                 var worksheet = workbook.Worksheet(i);
-                var pump = new Pump(worksheet);
+                var pump = new PumpForYork(worksheet);
                 pump.Name = worksheet.Name;
                 pump.GetData(2, "B", "C", "I", 35);
                 pump.GetData(13, "B", "C", "I", 55);
@@ -225,11 +225,11 @@ namespace TestExel.Services
             return pumps;
         }
         //Getting all pumps but only with 30 and 50 degree data
-        private List<Pump> GetAllPumpsWithBasicTemp()
+        private List<PumpForYork> GetAllPumpsWithBasicTemp()
         {
             var pumps = GetAllPumpsFromExel();
             var filteredData = pumps
-                .Select(pump => new Pump
+                .Select(pump => new PumpForYork
                 {
                     Name = pump.Name,
                     Data = pump.Data
@@ -242,7 +242,7 @@ namespace TestExel.Services
             return filteredData;
         }
         //Data rounding
-        private static void RoundCOPAndP(List<Pump> pumps)
+        private static void RoundCOPAndP(List<PumpForYork> pumps)
         {
             foreach (var pump in pumps)
             {
