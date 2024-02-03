@@ -22,33 +22,60 @@ class Program
 {
     static async Task Main()
     {
-        Console.WriteLine("Write full path to Excel File:");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx"
-        string excelFilePath = Console.ReadLine();
+        //Console.WriteLine("Write full path to Excel File:");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx"
+        string excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\TestForAlphaInnotec.xlsx";//Console.ReadLine();
 
-        Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
-        string dataBasePath = Console.ReadLine();
+        //Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
+        //string dataBasePath = Console.ReadLine();
 
 
         var pumpService = new PumpServiceForAlphaInnotec(excelFilePath);
-
         var standartPumps = pumpService.CreateListStandartPumps();
         var oldPumps = pumpService.GetAllPumpsFromExel();
-        string dataBasePath = Console.ReadLine();
-        //int[] outTempMidFor35 = { -25, -10, -7, 2, 7, 12 };
-        //int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor35, inTempMidFor35, 35, "2");
-        //int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
-        //int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor55, inTempMidFor55, 55, "2");
+        //string dataBasePath = Console.ReadLine();
+        int[] outTempMidFor35 = { -22, -15, -10, -7,  2,  7, 12 };
+        int[] inTempMidFor35 =  {  35,  35,  35, 34, 30, 27, 24 };
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor35, inTempMidFor35, 35, "2");
+       
+        int[] outTempMidFor55 = { -22, -15, -10, -7,  2,  7, 12 };
+        int[] inTempMidFor55 = {   55,  55,  55, 52, 42, 36, 30 };
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor55, inTempMidFor55, 55, "2");
 
-        //int[] outTempColdFor35 = { -25, -22, -15, -7, 2, 7, 12 };
-        //int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor35, inTempColdFor35, 35, "1");
-        //int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
-        //int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
-        //pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
+        int[] outTempColdFor35 = { -22, -7,  2,  7, 12 };
+        int[] inTempColdFor35 = {   35, 30, 27, 25, 24 };
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor35, inTempColdFor35, 35, "1");
+        int[] outTempColdFor55 = { -22, -7,  2,  7, 12 };
+        int[] inTempMidCold55 = {   55, 44, 37, 32, 30};
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
+        int[] outTempWarmFor35 = { -7,  2,  7, 12 };
+        int[] inTempWarmFor35 = {  35, 35, 31, 26 };
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempWarmFor35, inTempWarmFor35, 35, "3");
+        int[] outTempWarmFor55 = { -7,  2,  7, 12 };
+        int[] inTempMidWarm55 = {  55, 55, 46, 34 };
+        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempWarmFor55, inTempMidWarm55, 55, "3");
 
+        foreach (var standartPump in standartPumps)
+        {
+            Console.WriteLine("Name " + standartPump.Name);
+            foreach (var data in standartPump.Data)
+            {
+                Console.WriteLine("Temp Out" + data.Key);
+                foreach (var datas in data.Value)
+                {
+                    Console.WriteLine("--------Climate: " + datas.Climate);
+                    Console.WriteLine("--------FlowTemp: " + datas.FlowTemp);
+                    Console.WriteLine("--------MaxVorlauftemperatur: " + datas.MaxVorlauftemperatur);
+                    Console.WriteLine("--------ForTemp: " + datas.ForTemp);
+                    Console.WriteLine("--------MinHC: " + datas.MinHC);
+                    Console.WriteLine("--------MidHC: " + datas.MidHC);
+                    Console.WriteLine("--------MaxHC: " + datas.MaxHC);
+                    Console.WriteLine("--------MinCOP: " + datas.MinCOP);
+                    Console.WriteLine("--------MidCOP: " + datas.MidCOP);
+                    Console.WriteLine("--------MaxCOP: " + datas.MaxCOP);
 
+                }
+            }
+        }
         //var pumpServiceForDB = new PumpServiceForDB(dataBasePath);
 
         //while (true)
