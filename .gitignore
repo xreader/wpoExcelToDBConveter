@@ -365,3 +365,6 @@ FodyWeavers.xsd
 /TestExel/wpov5_referenz.db
 /TestExel/testDB.db
 /TestExel/TestForAlphaInnotec.xlsx
+/TestExel/WasserAlphaInnotec.xlsx
+/TestExel/LuftAlphaInnotec.xlsx
+/TestExel/SoleAlphaInnotec.xlsx
