@@ -7,10 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 using TestExel.DBConnection;
 using TestExel.DBModels;
+using TestExel.Models;
 using TestExel.Repository;
 using TestExel.StandartModels;
 
-namespace TestExel.Services
+namespace TestExel.ServicesForDB
 {
     internal class PumpServiceForDB
     {
@@ -24,7 +25,7 @@ namespace TestExel.Services
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
         }
-        public async Task ChangeLeistungsdatenInDbByExcelData(PumpForYork pump)
+        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
         {
             var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
             foreach (var wp in wpList)
@@ -52,20 +53,20 @@ namespace TestExel.Services
                             //We take the first entry for updating; subsequent repeated ones must be deleted! and must be removed both from the database and from the list
                             var leavesForUpdate = listWithLeavesForUpdate[0];
                             //Finding the Heizleistung - P and Update
-                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);              
+                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);
                             WPleistHeiz.value_as_int = (int)(newData.MidHC * 100);
                             await _leaveRepository.UpdateLeaves(WPleistHeiz);
                             //Finding the COP and Update
-                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);               
+                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);
                             WPleistCOP.value_as_int = (int)(newData.MidCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistCOP);
                             //Finding the Leistungsaufnahme and Update
-                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);            
-                            WPleistAuf.value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100);
+                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);
+                            WPleistAuf.value_as_int = (int)(newData.MidHC / newData.MidCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistAuf);
                             //Finding the Kealteleistung and Update
-                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);            
-                            WPleistKaelte.value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100);
+                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);
+                            WPleistKaelte.value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100);
                             await _leaveRepository.UpdateLeaves(WPleistKaelte);
 
 
@@ -98,8 +99,8 @@ namespace TestExel.Services
                                 new Leave() { objectid_fk_properties_objectid = 1010, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newDataDictionary.Key },
                                 new Leave() { objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.Temp },
                                 new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - (0.96 * (newData.MidHC / newData.MidCOP))) * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC / newData.MidCOP) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC / newData.MidCOP * 100) },
                                 new Leave() { objectid_fk_properties_objectid = 1015, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MaxVorlauftemperatur },
                                 new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidCOP * 100) }
                             };
@@ -196,13 +197,13 @@ namespace TestExel.Services
                                 var changeValue = await UpdateBigHash(leavesIdWithOldDataList.Count, actuelIndexLeaveIdInList, wpId, gradInseide, typeClimat, Gui14825Hashcode.value, bigHash, (int)WPleistVTemp, (int)RefKlimazone14825);
                                 gradInseide = changeValue.Item1;
                                 typeClimat = changeValue.Item2;
-                                bigHash = changeValue.Item3;                                
+                                bigHash = changeValue.Item3;
                             }
 
                         }
                         actuelIndexLeaveIdInList++;
                     }
-                    
+
                     Console.WriteLine("Pump -" + wp.value + "  Update!");
                     Console.WriteLine();
                     Console.WriteLine();
@@ -213,7 +214,7 @@ namespace TestExel.Services
         //Method for updating a long hash and switching to a different climate and temperature
         private async Task<(int, int, string)> UpdateBigHash(int leavesIdCount, int actuelIndexLeaveIdInList, int wpId, int gradInseide, int typeClimat, string hash, string bigHash, int gradInseideInLeave, int typeClimatInLeaves)
         {
-            if (leavesIdCount-1 == actuelIndexLeaveIdInList)
+            if (leavesIdCount - 1 == actuelIndexLeaveIdInList)
                 bigHash += hash + "#";
 
             var bigHashDB = await GetBigHashDB(wpId, gradInseide, typeClimat);
@@ -242,10 +243,10 @@ namespace TestExel.Services
             switch (gradInseide)
             {
                 case 35:
-                    return typeClimat == 1 ?  await _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
+                    return typeClimat == 1 ? await _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
                                             : await _leaveRepository.GetBigHashFor35GradForMittelKlimaByWpId(wpId);  //if the climate is average
                 case 55:
-                    return typeClimat == 1 ?  await _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
+                    return typeClimat == 1 ? await _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
                                             : await _leaveRepository.GetBigHashFor55GradForMittelKlimaByWpId(wpId);  //if the climate is average
                 default:
                     return null;
@@ -288,7 +289,7 @@ namespace TestExel.Services
             for (int i = 0; i < len; i++)
             {
                 char chr = s[i];
-                hash = ((hash << 5) - hash) + chr;
+                hash = (hash << 5) - hash + chr;
                 hash |= 0; // Convert to 32-bit integer
             }
 
