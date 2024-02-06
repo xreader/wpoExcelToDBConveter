@@ -11,23 +11,27 @@ using TestExel.Models;
 using TestExel.Repository;
 using TestExel.StandartModels;
 
+
 namespace TestExel.ServicesForDB
 {
-    internal class PumpServiceForDB
+    internal class PumpServiceForDBAlphaInotec
     {
         private readonly LeaveRepository _leaveRepository;
         private readonly NodeRepository _nodeRepository;
-        public PumpServiceForDB(string pathDB)
+        private readonly TextRepository _textRepository;
+        public PumpServiceForDBAlphaInotec(string pathDB)
         {
             var options = new DbContextOptionsBuilder<ApplicationDBContext>()
                .UseSqlite("Data Source=" + pathDB + ";")
                .Options;
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
+            _textRepository = new TextRepository(new ApplicationDBContext(options));
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
-        {
-            var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+        {            
+            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);            
+            var wpList = await _leaveRepository.FindLeaveByTextId(textIdForWp);
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TestExel.Models
 {
-    class Pump
+    public class Pump
     {
         public string Name { get; set; }
         public Dictionary<int, List<DataPump>> Data { get; set; }

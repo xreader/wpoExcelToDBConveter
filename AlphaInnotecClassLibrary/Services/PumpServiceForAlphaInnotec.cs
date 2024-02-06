@@ -30,7 +30,7 @@ namespace TestExel.Services.ServicesForDifferentCompany
             }
         }
         //Get all pumps from Exel
-        public List<Pump> GetAllPumpsFromExel()
+        public List<Pump> GetAllPumpsFromExel(int numFirstDataLineFor35Grad, int numFirstDataLineFor55Grad, string letterColumnWithOutsideTemp, string letterColumnWithBeginningData, string letterColumnWithEndData)
         {
             List<Pump> pumps = new List<Pump>();
             var sheetsCount = workbook.Worksheets.Count;
@@ -39,8 +39,8 @@ namespace TestExel.Services.ServicesForDifferentCompany
                 var worksheet = workbook.Worksheet(i);
                 var pump = new Pump(worksheet);
                 pump.Name = worksheet.Name;
-                pump.GetData(2, "B", "D", "J", 35);
-                pump.GetData(4, "B", "D", "J", 55);
+                pump.GetData(numFirstDataLineFor35Grad, letterColumnWithOutsideTemp, letterColumnWithBeginningData, letterColumnWithEndData, 35);
+                pump.GetData(numFirstDataLineFor55Grad, letterColumnWithOutsideTemp, letterColumnWithBeginningData, letterColumnWithEndData, 55);
                 if (pump != null && pump.Name != "")
                     pumps.Add(pump);
 

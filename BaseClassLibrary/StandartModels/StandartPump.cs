@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestExel.StandartModels
 {
-    internal class StandartPump
+    public class StandartPump
     {
         public string Name { get; set; }
         public Dictionary<int, List<StandartDataPump>> Data { get; set; }

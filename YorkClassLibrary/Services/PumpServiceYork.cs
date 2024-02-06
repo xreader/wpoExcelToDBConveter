@@ -1,28 +1,24 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Math;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TestExel.Models;
-using TestExel.StandartModels;
+using TestExel.Services;
 
-namespace TestExel.Services.ServicesForDifferentCompany
+namespace YorkClassLibrary.Services
 {
-    class PumpServiceForYork : PumpService
+    internal class PumpServiceYork : PumpService
     {
         private readonly XLWorkbook workbook;
 
-        public PumpServiceForYork(string excelFilePath)
+        public PumpServiceYork(string excelFilePath)
         {
             workbook = new XLWorkbook(excelFilePath);
         }
-       
-       
+
+
         //Get all pumps from Exel
         public List<Pump> GetAllPumpsFromExel()
         {
@@ -42,9 +38,5 @@ namespace TestExel.Services.ServicesForDifferentCompany
             RoundCOPAndP(pumps);
             return pumps;
         }
-        
-
     }
-
-
 }

@@ -8,7 +8,7 @@ using TestExel.StandartModels;
 
 namespace TestExel.Services
 {
-    class PumpService
+    public class PumpService
     {
         public List<StandartPump> CreateListStandartPumps() => new List<StandartPump>();
         //Creating a new data object according to the standard when it is in the table

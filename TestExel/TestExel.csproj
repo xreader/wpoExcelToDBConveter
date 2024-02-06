@@ -8,11 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.102.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.14" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.14" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.14" />
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.15" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AlphaInnotecClassLibrary\AlphaInnotecClassLibrary.csproj" />
+    <ProjectReference Include="..\BaseClassLibrary\BaseClassLibrary.csproj" />
+    <ProjectReference Include="..\YorkClassLibrary\YorkClassLibrary.csproj" />
   </ItemGroup>
 
 </Project>
