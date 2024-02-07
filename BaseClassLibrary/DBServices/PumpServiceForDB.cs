@@ -17,6 +17,7 @@ namespace TestExel.ServicesForDB
     {
         private readonly LeaveRepository _leaveRepository;
         private readonly NodeRepository _nodeRepository;
+        private readonly TextRepository _textRepository;
         public PumpServiceForDB(string pathDB)
         {
             var options = new DbContextOptionsBuilder<ApplicationDBContext>()
@@ -24,10 +25,13 @@ namespace TestExel.ServicesForDB
                .Options;
             _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
+            _textRepository= new TextRepository(new ApplicationDBContext(options));
+
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
         {
-            var wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);
+            var wpList = await _leaveRepository.FindLeaveByTextId(textIdForWp);
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;

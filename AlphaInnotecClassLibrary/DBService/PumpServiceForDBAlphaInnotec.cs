@@ -29,8 +29,8 @@ namespace TestExel.ServicesForDB
             _textRepository = new TextRepository(new ApplicationDBContext(options));
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
-        {            
-            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);            
+        {
+            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);   
             var wpList = await _leaveRepository.FindLeaveByTextId(textIdForWp);
             foreach (var wp in wpList)
             {
@@ -58,19 +58,19 @@ namespace TestExel.ServicesForDB
                             var leavesForUpdate = listWithLeavesForUpdate[0];
                             //Finding the Heizleistung - P and Update
                             var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);
-                            WPleistHeiz.value_as_int = (int)(newData.MidHC * 100);
+                            WPleistHeiz.value_as_int = (int)(newData.MaxHC * 100);
                             await _leaveRepository.UpdateLeaves(WPleistHeiz);
                             //Finding the COP and Update
                             var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);
-                            WPleistCOP.value_as_int = (int)(newData.MidCOP * 100);
+                            WPleistCOP.value_as_int = (int)(newData.MaxCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistCOP);
                             //Finding the Leistungsaufnahme and Update
                             var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);
-                            WPleistAuf.value_as_int = (int)(newData.MidHC / newData.MidCOP * 100);
+                            WPleistAuf.value_as_int = (int)(newData.MaxHC / newData.MaxCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistAuf);
                             //Finding the Kealteleistung and Update
                             var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);
-                            WPleistKaelte.value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100);
+                            WPleistKaelte.value_as_int = (int)((newData.MaxHC - 0.96 * (newData.MaxHC / newData.MaxCOP)) * 100);
                             await _leaveRepository.UpdateLeaves(WPleistKaelte);
 
 
