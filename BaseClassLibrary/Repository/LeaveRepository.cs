@@ -28,9 +28,9 @@ namespace TestExel.Repository
 
             return result;
         }
-        public async Task<List<Leave>> FindLeaveByTextId(int textId) => await _context.leaves.Where(x => x.value_as_int == textId && x.objectid_fk_properties_objectid == 1320).ToListAsync();
+        public async Task<Leave> FindLeaveByTextId(int textId) => await _context.leaves.FirstOrDefaultAsync(x => x.value_as_int == textId && x.objectid_fk_properties_objectid == 1320);
 
-        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => x.value.Contains(pumpName) && x.objectid_fk_properties_objectid== 1320).ToListAsync();
+        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => (x.value == pumpName || x.value.Contains(pumpName + "+")) && (x.objectid_fk_properties_objectid== 1320 || x.objectid_fk_properties_objectid == 1006)).ToListAsync();
         public async Task<int> GetCountLeavesById(int id) => await _context.leaves.CountAsync(x => x.nodeid_fk_nodes_nodeid == id);  
         public async Task<List<Leave>> GetLeavesById(int id) => await _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToListAsync();
 

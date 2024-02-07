@@ -30,8 +30,19 @@ namespace TestExel.ServicesForDB
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
         {
-            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);
-            var wpList = await _leaveRepository.FindLeaveByTextId(textIdForWp);
+            List<Leave> wpList = new List<Leave>();
+            var textForWpList = await _textRepository.FindTextIdByGerName(pump.Name);
+            if (textForWpList.Count > 0)
+            {
+                foreach (var textForWp in textForWpList)
+                {
+                    wpList.Add(await _leaveRepository.FindLeaveByTextId(textForWp.textid));
+                }
+            }
+            else
+            {
+                wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            }
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;

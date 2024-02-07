@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,10 @@ namespace TestExel.Repository
         {
             return _context.texts.ToList();
         }
-        public int FindTextIdByGerName(string gerName)
+        public async Task<List<Text>> FindTextIdByGerName(string gerName)
         {
-            var text = _context.texts.FirstOrDefault(x => x.ger == gerName);            
-            return text.textid;
+            var text = await _context.texts.Where(x => x.ger == gerName || x.ger.Contains(gerName+"+")).ToListAsync();            
+            return text;
         }
 
     }

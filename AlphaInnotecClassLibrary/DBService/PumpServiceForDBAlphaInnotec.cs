@@ -30,14 +30,25 @@ namespace TestExel.ServicesForDB
         }
         public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
         {
-            var textIdForWp = _textRepository.FindTextIdByGerName(pump.Name);   
-            var wpList = await _leaveRepository.FindLeaveByTextId(textIdForWp);
+            List<Leave> wpList = new List<Leave>();
+            var textForWpList = await _textRepository.FindTextIdByGerName(pump.Name);
+            if (textForWpList.Count > 0)
+            {
+                foreach(var textForWp in textForWpList)
+                {
+                    wpList.Add(await _leaveRepository.FindLeaveByTextId(textForWp.textid));
+                }                
+            }
+            else
+            {
+                wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            }
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;
                 //Get all leave Id in db for this WP 
                 var leavesIdWithOldLeistungdatenList = await _nodeRepository.GetIdLeavesWithLeistungsdatenByPumpId(wpId);//list of IdLeaves that need to be changed
-                //Get all leave in db for this WP                
+                                                                                                                         //Get all leave in db for this WP                
                 var listWithleavesWithListOldLeistungdaten = await _leaveRepository.GetLeavesByIdList(leavesIdWithOldLeistungdatenList);
 
                 //We sort through the data we received from Excel
@@ -102,11 +113,11 @@ namespace TestExel.ServicesForDB
                             {
                                 new Leave() { objectid_fk_properties_objectid = 1010, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newDataDictionary.Key },
                                 new Leave() { objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.Temp },
-                                new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC / newData.MidCOP * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MaxHC * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MaxHC - 0.96 * (newData.MaxHC / newData.MaxCOP)) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MaxHC / newData.MaxCOP * 100) },
                                 new Leave() { objectid_fk_properties_objectid = 1015, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MaxVorlauftemperatur },
-                                new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidCOP * 100) }
+                                new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MaxCOP * 100) }
                             };
                             //Add them to the database
                             foreach (var leave in leaves)
@@ -133,6 +144,7 @@ namespace TestExel.ServicesForDB
 
                 Console.WriteLine("Pump -" + wp.value + " Leistungdata Update!");
             }
+        
         }
 
 

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TestExel.Models;
 using TestExel.Services.ServicesForDifferentCompany;
+using TestExel.ServicesForDB;
 using TestExel.StandartModels;
 
 namespace AlphaInnotecClassLibrary
@@ -12,9 +13,10 @@ namespace AlphaInnotecClassLibrary
     public class LogicAlphaInnotec
     {
         private PumpServiceForAlphaInnotec _pumpServiceForAlphaInnotec;
-
+        private PumpServiceForDBAlphaInotec _pumpDBServiceForAlphaInnotec;
         public async Task GoalLogicAlphaInnotec(string dataBasePath)
         {
+            _pumpDBServiceForAlphaInnotec = new PumpServiceForDBAlphaInotec(dataBasePath);
             string excelFilePath;
             bool exit = true;
             while (exit)
@@ -34,7 +36,7 @@ namespace AlphaInnotecClassLibrary
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        LuftLogic(excelFilePath);
+                        await LuftLogic(excelFilePath, dataBasePath);
 
                         break;
                     case "2":
@@ -42,14 +44,14 @@ namespace AlphaInnotecClassLibrary
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Sole):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        SoleLogic(excelFilePath);
+                        await SoleLogic(excelFilePath, dataBasePath);
                         break;
                     case "3":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Wasser):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        WasserLogic(excelFilePath);
+                        await WasserLogic(excelFilePath, dataBasePath);
                         break;
                     case "4":
                         exit = false;
@@ -61,34 +63,75 @@ namespace AlphaInnotecClassLibrary
             }
         }
         
-        public void LuftLogic(string excelFilePath)
+        public async Task LuftLogic(string excelFilePath, string dataBasePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2,12,"B","D","J");
+            //oldPumps[0].Name = "Dima"; //My test pump
             ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Luft");
-            ViewData(standartPumps);
+            await ChooseWhatUpdate(standartPumps, oldPumps);
+            //ViewData(standartPumps);
+
 
         }
-        public void SoleLogic(string excelFilePath)
+        public async Task SoleLogic(string excelFilePath, string dataBasePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2, 4, "B", "D", "J");
             ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Sole");
-            ViewData(standartPumps);
+            await ChooseWhatUpdate(standartPumps, oldPumps);
+
+            //ViewData(standartPumps);
 
         }
-        public void WasserLogic(string excelFilePath)
+        public async Task WasserLogic(string excelFilePath, string dataBasePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2, 4, "B", "D", "J");
             ConvertToStandartForAlpaInnotec(standartPumps, oldPumps, "Wasser");
-            ViewData(standartPumps);
+            await ChooseWhatUpdate(standartPumps, oldPumps);
+
+            //ViewData(standartPumps);
 
         }
-
+        public async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps)
+        {
+            bool exit = true;
+            while (exit)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Choose operation: ");
+                Console.WriteLine("1. Update Dataen EN 14825 LG");
+                Console.WriteLine("2. Update Leistungsdaten");
+                Console.WriteLine("3. Back!");
+                var operationForAlpha = Console.ReadLine();
+                switch (operationForAlpha)
+                {
+                    case "1":
+                        //foreach (var pump in standartPumps)
+                        //{
+                        //    await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump);
+                        //}
+                        break;
+                    case "2":
+                        foreach (var pump in oldPumps)
+                        {
+                            await _pumpDBServiceForAlphaInnotec.ChangeLeistungsdatenInDbByExcelData(pump);
+                            Console.WriteLine("OK!");
+                        }
+                        break;
+                    case "3":
+                        exit = false;
+                        break; // Go back to company selection
+                    default:
+                        Console.WriteLine("Error input");
+                        break;
+                }
+            }
+        } 
         public void ConvertToStandartForAlpaInnotec(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
         {
             int[] outTempMidFor35 = { -22, -15, -10, -7, 2, 7, 12 };
@@ -141,10 +184,7 @@ namespace AlphaInnotecClassLibrary
         }
 
 
-        //oldPumps[0].Name = "WWC 100HX";
-        //var pumpServiceForDB = new PumpServiceForDBAlphaInotec(dataBasePath);
-        //await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(oldPumps[0]);
-        //Console.WriteLine("OK!");
+        
 
     }
 }
