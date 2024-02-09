@@ -68,7 +68,7 @@ namespace AlphaInnotecClassLibrary
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2,12,"B","D","J");
-            //oldPumps[0].Name = "Dima"; //My test pump
+            oldPumps[0].Name = "Shokhov"; //My test pump
             ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Luft");
             await ChooseWhatUpdate(standartPumps, oldPumps);
             //ViewData(standartPumps);
@@ -111,10 +111,10 @@ namespace AlphaInnotecClassLibrary
                 switch (operationForAlpha)
                 {
                     case "1":
-                        //foreach (var pump in standartPumps)
-                        //{
-                        //    await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump);
-                        //}
+                        foreach (var pump in standartPumps)
+                        {
+                            await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump);
+                        }
                         break;
                     case "2":
                         foreach (var pump in oldPumps)
