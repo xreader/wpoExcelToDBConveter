@@ -1,9 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TestExel.DBConnection;
 using TestExel.DBModels;
@@ -239,46 +243,16 @@ namespace TestExel.ServicesForDB
                     {
                         while (typeClimat <= 3)
                         {
-                            var dataForActuelClimat =  pump.Data
-                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString()))
-                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString()).ToList());
-                            string bigHashFor35Grad = "";
-                            string bigHashFor55Grad = "";
-                            foreach (var data in dataForActuelClimat)
-                            {
-                                var data35 = data.Value[0];
-                                var data55 = data.Value[1];
-                                //form a hash and update
-                                var str = data.Key + "#" + data35.MinHC + "#" + data35.MinCOP;
-                                int hash = GetHashCode(str);
-                                bigHashFor35Grad += hash + "#";
+                            var dataForActuelClimat35Grad =  pump.Data
+                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35))
+                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35).ToList());
 
-                                var nodeForThisData = new Node()
-                                {
-                                    typeid_fk_types_typeid = 25,
-                                    parentid_fk_nodes_nodeid = wpId,
-                                    licence = 0
-                                };
-                                await _nodeRepository.CreateNode(nodeForThisData);
-                                var leavesForCreate = new List<Leave>()
-                                {
-                                    new Leave(){objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = data35.ForTemp },
-                                    new Leave(){objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = (int)(data35.MinHC * 100) },
-                                    new Leave(){objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = (int)(data35.MinCOP * 100)},
-                                    new Leave(){objectid_fk_properties_objectid = 1351, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = data.Key },
-                                    new Leave(){objectid_fk_properties_objectid = 1356, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = typeClimat },
-                                    new Leave(){objectid_fk_properties_objectid = 1368, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value = hash.ToString(), value_as_int = 0},
+                            var dataForActuelClimat55Grad = pump.Data
+                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55))
+                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55).ToList());
 
-                                };
-                                //Add them to the database
-                                foreach (var leave in leavesForCreate)
-                                {
-                                    await _leaveRepository.CreateLeave(leave);
-                                }
-
-
-                            }
-
+                            await CreateNew14825Data(dataForActuelClimat35Grad, typeClimat, wpId);
+                            await CreateNew14825Data(dataForActuelClimat55Grad, typeClimat, wpId);
                             typeClimat++;
                         }
                         typeClimat = 1;
@@ -290,6 +264,88 @@ namespace TestExel.ServicesForDB
                 }
             }
         }
+
+        public async Task CreateNew14825Data(Dictionary<int, List<StandartDataPump>> dataDictionary, int typeClimat,int wpId) 
+        {
+            string bigHash = "";
+            int forTemp = dataDictionary.Values.First().First().ForTemp;
+            foreach (var data in dataDictionary)
+            {
+                var dataValue = data.Value.First();
+                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP, bigHash);
+                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP, bigHash);
+                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP, bigHash);
+            }
+            switch (typeClimat)
+            {
+                case 1:
+                    var neuLeaveCold = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1464 : 1466,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveCold);
+                    break;
+                case 2:
+                    var neuLeaveMid = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1364 : 1366,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveMid);
+
+                    break;
+                case 3:
+                    var neuLeaveWarm = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1468 : 1470,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveWarm);
+
+                    break;
+
+            }
+
+        }
+        public async Task<string> Create14825ForSelectedData(int wpId,int tempOut, int typeClimat, int forTemp, double HC, double COP, string bigHash)
+        {
+            //form a hash and update
+            var str = tempOut + "#" + HC + "#" + COP;
+            int hash = GetHashCode(str);
+            bigHash += hash + "#";
+
+            var nodeForThisData = new Node()
+            {
+                typeid_fk_types_typeid = 25,
+                parentid_fk_nodes_nodeid = wpId,
+                licence = 0
+            };
+            await _nodeRepository.CreateNode(nodeForThisData);
+            var leavesForCreate = new List<Leave>()
+                                {
+                                    new Leave(){objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = forTemp },
+                                    new Leave(){objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = (int)(HC * 100) },
+                                    new Leave(){objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = (int)(COP * 100)},
+                                    new Leave(){objectid_fk_properties_objectid = 1351, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = tempOut },
+                                    new Leave(){objectid_fk_properties_objectid = 1356, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value ="", value_as_int = typeClimat },
+                                    new Leave(){objectid_fk_properties_objectid = 1368, nodeid_fk_nodes_nodeid = nodeForThisData.nodeid, value = hash.ToString(), value_as_int = 0},
+
+                                };
+            //Add them to the database
+            foreach (var leave in leavesForCreate)
+            {
+                await _leaveRepository.CreateLeave(leave);
+            }
+            return bigHash;
+        }
+
         //Method for updating a long hash and switching to a different climate and temperature
         private async Task<(int, int, string)> UpdateBigHash(int leavesIdCount, int actuelIndexLeaveIdInList, int wpId, int gradInseide, int typeClimat, string hash, string bigHash, int gradInseideInLeave, int typeClimatInLeaves)
         {

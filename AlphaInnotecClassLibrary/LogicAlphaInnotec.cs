@@ -68,7 +68,7 @@ namespace AlphaInnotecClassLibrary
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2,12,"B","D","J");
-            oldPumps[0].Name = "Shokhov"; //My test pump
+            oldPumps[0].Name = "Dima2"; //My test pump
             ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Luft");
             await ChooseWhatUpdate(standartPumps, oldPumps);
             //ViewData(standartPumps);
