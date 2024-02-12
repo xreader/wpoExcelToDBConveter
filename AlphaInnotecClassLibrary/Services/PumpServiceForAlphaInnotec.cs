@@ -6,9 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestExel.Models;
+using TestExel.Services;
 using TestExel.StandartModels;
 
-namespace TestExel.Services.ServicesForDifferentCompany
+namespace AlphaInnotecClassLibrary.Services
 {
     class PumpServiceForAlphaInnotec : PumpService
     {
@@ -101,7 +102,8 @@ namespace TestExel.Services.ServicesForDifferentCompany
                 {
                     //Code if there is no such temperature outside in the table
                     //Search for data for a temperature outside when there is none
-                    var oldDataPump = FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
+                    var oldDataPump = oldDictionary.FirstOrDefault(pair => pair.Key > outTemps[i]).Value;// FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
+                    
                     //Convert values
                     ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
                 }

@@ -1,10 +1,12 @@
-﻿using System;
+﻿using AlphaInnotecClassLibrary.DBService;
+using AlphaInnotecClassLibrary.Services;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestExel.Models;
-using TestExel.Services.ServicesForDifferentCompany;
 using TestExel.ServicesForDB;
 using TestExel.StandartModels;
 
@@ -68,9 +70,9 @@ namespace AlphaInnotecClassLibrary
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2,12,"B","D","J");
-            oldPumps[0].Name = "Dima2"; //My test pump
-            ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Luft");
-            await ChooseWhatUpdate(standartPumps, oldPumps);
+            oldPumps[0].Name = "ABAMA10T/Luft"; //My test pump
+            ConvertToStandartForAlpaInnotecForLuft(standartPumps, oldPumps,"Luft");
+            await ChooseWhatUpdate(standartPumps, oldPumps, "Luft");
             //ViewData(standartPumps);
 
 
@@ -80,8 +82,8 @@ namespace AlphaInnotecClassLibrary
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2, 4, "B", "D", "J");
-            ConvertToStandartForAlpaInnotec(standartPumps, oldPumps,"Sole");
-            await ChooseWhatUpdate(standartPumps, oldPumps);
+            ConvertToStandartForAlpaInnotecForWasserAndSole(standartPumps, oldPumps,"Sole");
+            await ChooseWhatUpdate(standartPumps, oldPumps, "Sole");
 
             //ViewData(standartPumps);
 
@@ -91,13 +93,13 @@ namespace AlphaInnotecClassLibrary
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
             var oldPumps = _pumpServiceForAlphaInnotec.GetAllPumpsFromExel(2, 4, "B", "D", "J");
-            ConvertToStandartForAlpaInnotec(standartPumps, oldPumps, "Wasser");
-            await ChooseWhatUpdate(standartPumps, oldPumps);
+            ConvertToStandartForAlpaInnotecForWasserAndSole(standartPumps, oldPumps, "Wasser");
+            await ChooseWhatUpdate(standartPumps, oldPumps, "Wasser");
 
             //ViewData(standartPumps);
 
         }
-        public async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps)
+        public async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
         {
             bool exit = true;
             while (exit)
@@ -113,13 +115,13 @@ namespace AlphaInnotecClassLibrary
                     case "1":
                         foreach (var pump in standartPumps)
                         {
-                            await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump);
+                            await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump, typePump);
                         }
                         break;
                     case "2":
                         foreach (var pump in oldPumps)
                         {
-                            await _pumpDBServiceForAlphaInnotec.ChangeLeistungsdatenInDbByExcelData(pump);
+                            await _pumpDBServiceForAlphaInnotec.ChangeLeistungsdatenInDbByExcelData(pump, typePump);
                             Console.WriteLine("OK!");
                         }
                         break;
@@ -132,7 +134,30 @@ namespace AlphaInnotecClassLibrary
                 }
             }
         } 
-        public void ConvertToStandartForAlpaInnotec(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
+        public void ConvertToStandartForAlpaInnotecForLuft(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
+        {
+            int[] outTempMidFor35 = { -20, -10, -7,  2,  7, 12 };
+            int[] inTempMidFor35 = {   35,  35, 34, 30, 27, 24 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempMidFor35, inTempMidFor35, 35, "2", typeFile);
+
+            int[] outTempMidFor55 = { -20, -10, -7,  2,  7, 12 };
+            int[] inTempMidFor55 = {   55,  55, 52, 42, 36, 30 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempMidFor55, inTempMidFor55, 55, "2", typeFile);
+
+            int[] outTempColdFor35 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempColdFor35, inTempColdFor35, 35, "1", typeFile);
+            int[] outTempColdFor55 = { -20,-10, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55,44, 37, 32, 30 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1", typeFile);
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempWarmFor35, inTempWarmFor35, 35, "3", typeFile);
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempWarmFor55, inTempMidWarm55, 55, "3", typeFile);
+        }
+        public void ConvertToStandartForAlpaInnotecForWasserAndSole(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
         {
             int[] outTempMidFor35 = { -22, -15, -10, -7, 2, 7, 12 };
             int[] inTempMidFor35 = { 35, 35, 35, 34, 30, 27, 24 };
@@ -155,7 +180,6 @@ namespace AlphaInnotecClassLibrary
             int[] inTempMidWarm55 = { 55, 55, 46, 34 };
             _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempWarmFor55, inTempMidWarm55, 55, "3", typeFile);
         }
-
 
         public void ViewData(List<StandartPump> standartPumps)
         {

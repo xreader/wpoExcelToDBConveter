@@ -16,7 +16,7 @@ using TestExel.Repository;
 using TestExel.StandartModels;
 
 
-namespace TestExel.ServicesForDB
+namespace AlphaInnotecClassLibrary.DBService
 {
     internal class PumpServiceForDBAlphaInotec
     {
@@ -32,7 +32,7 @@ namespace TestExel.ServicesForDB
             _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
             _textRepository = new TextRepository(new ApplicationDBContext(options));
         }
-        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
+        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump, string typePump)
         {
             List<Leave> wpList = new List<Leave>();
             var textForWpList = await _textRepository.FindTextIdByGerName(pump.Name);
@@ -46,6 +46,21 @@ namespace TestExel.ServicesForDB
             else
             {
                 wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            }
+            if (wpList.Count == 0)
+            {
+                switch (typePump)
+                {
+                    case "Wasser":
+                        wpList.Add(await CreateNewPumpWasser(pump.Name));
+                        break;
+                    case "Luft":
+                        wpList.Add(await CreateNewPumpLuft(pump.Name));
+                        break;
+                    case "Sole":
+                        wpList.Add(await CreateNewPumpSole(pump.Name));
+                        break;
+                }
             }
             foreach (var wp in wpList)
             {
@@ -155,7 +170,7 @@ namespace TestExel.ServicesForDB
 
 
         //Update in DB this data  EN 14825 LG
-        public async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump)
+        public async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump, string typePump)
         {
             List<Leave> wpList = new List<Leave>();
             var textForWpList = await _textRepository.FindTextIdByGerName(pump.Name);
@@ -169,6 +184,21 @@ namespace TestExel.ServicesForDB
             else
             {
                 wpList = await _leaveRepository.FindLeaveByNamePump(pump.Name);
+            }
+            if(wpList.Count == 0)
+            {
+                switch(typePump)
+                {
+                    case "Wasser":
+                        wpList.Add(await CreateNewPumpWasser(pump.Name));
+                        break;
+                    case "Luft":
+                        wpList.Add(await CreateNewPumpLuft(pump.Name));
+                        break;
+                    case "Sole":
+                        wpList.Add(await CreateNewPumpSole(pump.Name));
+                        break;
+                }
             }
             foreach (var wp in wpList)
             {
@@ -271,10 +301,13 @@ namespace TestExel.ServicesForDB
             int forTemp = dataDictionary.Values.First().First().ForTemp;
             foreach (var data in dataDictionary)
             {
-                var dataValue = data.Value.First();
-                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP, bigHash);
-                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP, bigHash);
-                bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP, bigHash);
+                foreach(var dataValue in data.Value)
+                {
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP);
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP);
+                }
+                
             }
             switch (typeClimat)
             {
@@ -314,12 +347,106 @@ namespace TestExel.ServicesForDB
             }
 
         }
-        public async Task<string> Create14825ForSelectedData(int wpId,int tempOut, int typeClimat, int forTemp, double HC, double COP, string bigHash)
+        
+        private async Task<Leave> CreateNewPumpWasser(string namePump)
+        {
+            var node = new Node()
+            {
+                typeid_fk_types_typeid = 6,
+                parentid_fk_nodes_nodeid =  7782, 
+                licence = 0
+            };
+            await _nodeRepository.CreateNode(node);
+            var wpId = node.nodeid;
+
+            var leavesList = new List<Leave>()
+            {
+                new Leave(){ objectid_fk_properties_objectid = 1006, nodeid_fk_nodes_nodeid = wpId, value = namePump, value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1001, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 3},
+                new Leave(){ objectid_fk_properties_objectid = 1002, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1007, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1019, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
+                new Leave(){ objectid_fk_properties_objectid = 1022, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 150},
+                new Leave(){ objectid_fk_properties_objectid = 1023, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},                
+                new Leave(){ objectid_fk_properties_objectid = 1031, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},                
+                new Leave(){ objectid_fk_properties_objectid = 1245, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1258, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1699, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 60},
+            };
+            foreach(var item in leavesList)
+            {
+                await _leaveRepository.CreateLeave(item);
+            }
+            return leavesList[0];
+        }
+        private async Task<Leave> CreateNewPumpSole(string namePump)
+        {
+            var node = new Node()
+            {
+                typeid_fk_types_typeid = 6,
+                parentid_fk_nodes_nodeid = 7782,
+                licence = 0
+            };
+            await _nodeRepository.CreateNode(node);
+            var wpId = node.nodeid;
+
+            var leavesList = new List<Leave>()
+            {
+                new Leave(){ objectid_fk_properties_objectid = 1006, nodeid_fk_nodes_nodeid = wpId, value = namePump, value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1001, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1002, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1007, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1019, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
+                new Leave(){ objectid_fk_properties_objectid = 1022, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 150},
+                new Leave(){ objectid_fk_properties_objectid = 1023, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
+                new Leave(){ objectid_fk_properties_objectid = 1031, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1245, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1258, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1699, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 60},
+            };
+            foreach (var item in leavesList)
+            {
+                await _leaveRepository.CreateLeave(item);
+            }
+            return leavesList[0];
+        }
+        private async Task<Leave> CreateNewPumpLuft(string namePump)
+        {
+            var node = new Node()
+            {
+                typeid_fk_types_typeid = 6,
+                parentid_fk_nodes_nodeid = 7782,
+                licence = 0
+            };
+            await _nodeRepository.CreateNode(node);
+            var wpId = node.nodeid;
+
+            var leavesList = new List<Leave>()
+            {
+                new Leave(){ objectid_fk_properties_objectid = 1006, nodeid_fk_nodes_nodeid = wpId, value = namePump, value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1001, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 2},
+                new Leave(){ objectid_fk_properties_objectid = 1002, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1007, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1019, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
+                new Leave(){ objectid_fk_properties_objectid = 1023, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
+                new Leave(){ objectid_fk_properties_objectid = 1031, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1245, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
+                new Leave(){ objectid_fk_properties_objectid = 1258, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1542, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1543, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
+                new Leave(){ objectid_fk_properties_objectid = 1699, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 60}
+            };
+            foreach (var item in leavesList)
+            {
+                await _leaveRepository.CreateLeave(item);
+            }
+            return leavesList[0];
+        }
+        public async Task<string> Create14825ForSelectedData(int wpId,int tempOut, int typeClimat, int forTemp, double HC, double COP)
         {
             //form a hash and update
             var str = tempOut + "#" + HC + "#" + COP;
             int hash = GetHashCode(str);
-            bigHash += hash + "#";
 
             var nodeForThisData = new Node()
             {
@@ -343,7 +470,7 @@ namespace TestExel.ServicesForDB
             {
                 await _leaveRepository.CreateLeave(leave);
             }
-            return bigHash;
+            return hash+"#";
         }
 
         //Method for updating a long hash and switching to a different climate and temperature
