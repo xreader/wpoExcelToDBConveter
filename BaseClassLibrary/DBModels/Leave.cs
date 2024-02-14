@@ -10,7 +10,7 @@ namespace TestExel.DBModels
     {
         public int objectid_fk_properties_objectid { get; set; }
         public int nodeid_fk_nodes_nodeid { get; set; }
-        public string value { get; set; }
+        public string? value { get; set; }
         public int? value_as_int { get; set; }
     }
 }
