@@ -37,7 +37,6 @@ namespace YorkClassLibrary
             pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor55, inTempMidCold55, 55, "1");
             var pumpServiceForDBForYork = new PumpServiceForDBYork(dataBasePath);
             bool exit = true;
-            standartPumpsForYork[0].Name = "BARABARABERE2";
             while (exit)
             {
                 Console.WriteLine();
