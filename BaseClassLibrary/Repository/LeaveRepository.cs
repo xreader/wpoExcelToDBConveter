@@ -37,8 +37,10 @@ namespace TestExel.Repository
         public async Task<Leave> GetBigHashFor35GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
         public async Task<Leave> GetBigHashFor55GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
         public async Task<Leave> GetBigHashFor35GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
-        public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);        
-        
+        public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor35GradForWarmKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1468 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor55GradForWarmKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1470 && x.nodeid_fk_nodes_nodeid == wpId);
+
         public async Task<bool> CreateLeave(Leave leave)
         {
             await _context.leaves.AddAsync(leave);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestExel.ServicesForDB;
+using YorkClassLibrary.DBService;
 using YorkClassLibrary.Services;
 
 namespace YorkClassLibrary
@@ -13,8 +14,8 @@ namespace YorkClassLibrary
         public async Task GoalLogicYourk( string dataBasePath)
         {
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            Console.WriteLine("Write full path to Excel File for York:");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx"
-            var excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx";//Console.ReadLine();
+            Console.WriteLine("Write full path to Excel File for York:");
+            var excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\York.xlsx";//Console.ReadLine();
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -34,8 +35,9 @@ namespace YorkClassLibrary
             int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
             int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
             pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor55, inTempMidCold55, 55, "1");
-            var pumpServiceForDBForYork = new PumpServiceForDB(dataBasePath);
+            var pumpServiceForDBForYork = new PumpServiceForDBYork(dataBasePath);
             bool exit = true;
+            standartPumpsForYork[0].Name = "BARABARABERE2";
             while (exit)
             {
                 Console.WriteLine();
@@ -49,6 +51,7 @@ namespace YorkClassLibrary
                     case "1":
                         foreach (var pump in standartPumpsForYork)
                         {
+                            
                             await pumpServiceForDBForYork.ChangeDataenEN14825LGInDbByExcelData(pump);
                         }
                         break;

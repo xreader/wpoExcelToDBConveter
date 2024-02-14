@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using TestExel.Models;
@@ -38,7 +39,7 @@ namespace AlphaInnotecClassLibrary
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        await LuftLogic(excelFilePath, dataBasePath);
+                        await LuftLogic(excelFilePath);
 
                         break;
                     case "2":
@@ -46,14 +47,14 @@ namespace AlphaInnotecClassLibrary
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Sole):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        await SoleLogic(excelFilePath, dataBasePath);
+                        await SoleLogic(excelFilePath);
                         break;
                     case "3":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Wasser):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
                         excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        await WasserLogic(excelFilePath, dataBasePath);
+                        await WasserLogic(excelFilePath);
                         break;
                     case "4":
                         exit = false;
@@ -65,7 +66,7 @@ namespace AlphaInnotecClassLibrary
             }
         }
         
-        public async Task LuftLogic(string excelFilePath, string dataBasePath)
+        private async Task LuftLogic(string excelFilePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
@@ -73,7 +74,7 @@ namespace AlphaInnotecClassLibrary
             ConvertToStandartForAlpaInnotecForLuft(standartPumps, oldPumps,"Luft");
             await ChooseWhatUpdate(standartPumps, oldPumps, "Luft");           
         }
-        public async Task SoleLogic(string excelFilePath, string dataBasePath)
+        private async Task SoleLogic(string excelFilePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
@@ -82,7 +83,7 @@ namespace AlphaInnotecClassLibrary
             await ChooseWhatUpdate(standartPumps, oldPumps, "Sole");           
 
         }
-        public async Task WasserLogic(string excelFilePath, string dataBasePath)
+        private async Task WasserLogic(string excelFilePath)
         {
             _pumpServiceForAlphaInnotec = new PumpServiceForAlphaInnotec(excelFilePath);
             var standartPumps = _pumpServiceForAlphaInnotec.CreateListStandartPumps();
@@ -92,7 +93,7 @@ namespace AlphaInnotecClassLibrary
 
 
         }
-        public async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
+        private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
         {
             bool exit = true;
             while (exit)
@@ -127,7 +128,7 @@ namespace AlphaInnotecClassLibrary
                 }
             }
         } 
-        public void ConvertToStandartForAlpaInnotecForLuft(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
+        private void ConvertToStandartForAlpaInnotecForLuft(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
         {
             int[] outTempMidFor35 = { -20, -10, -7,  2,  7, 12 };
             int[] inTempMidFor35 = {   35,  35, 34, 30, 27, 24 };
@@ -150,7 +151,7 @@ namespace AlphaInnotecClassLibrary
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
             _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempWarmFor55, inTempMidWarm55, 55, "3", typeFile);
         }
-        public void ConvertToStandartForAlpaInnotecForWasserAndSole(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
+        private void ConvertToStandartForAlpaInnotecForWasserAndSole(List<StandartPump> standartPumps, List<Pump> oldPumps, string typeFile)
         { 
             int[] outTempMidFor35 = { -20, -10, -7,  2,  7, 12 };
             int[] inTempMidFor35 = {   35,  35, 34, 30, 27, 24 };
@@ -173,35 +174,6 @@ namespace AlphaInnotecClassLibrary
             int[] inTempMidWarm55 = {  55, 55, 55, 46, 34 };
             _pumpServiceForAlphaInnotec.GetDataInListStandartPumpsAlpha(standartPumps, oldPumps, outTempWarmFor55, inTempMidWarm55, 55, "3", typeFile);
         }
-
-        public void ViewData(List<StandartPump> standartPumps)
-        {
-            foreach (var standartPump in standartPumps)
-            {
-                Console.WriteLine("Name " + standartPump.Name);
-                foreach (var data in standartPump.Data)
-                {
-                    Console.WriteLine("Temp Out" + data.Key);
-                    foreach (var datas in data.Value)
-                    {
-                        Console.WriteLine("--------Climate: " + datas.Climate);
-                        Console.WriteLine("----------------ForTemp: " + datas.ForTemp);
-                        Console.WriteLine("------------------------FlowTemp: " + datas.FlowTemp);
-                        Console.WriteLine("------------------------MaxVorlauftemperatur: " + datas.MaxVorlauftemperatur);
-                        Console.WriteLine("------------------------MinHC: " + datas.MinHC);
-                        Console.WriteLine("------------------------MidHC: " + datas.MidHC);
-                        Console.WriteLine("------------------------MaxHC: " + datas.MaxHC);
-                        Console.WriteLine("------------------------MinCOP: " + datas.MinCOP);
-                        Console.WriteLine("------------------------MidCOP: " + datas.MidCOP);
-                        Console.WriteLine("------------------------MaxCOP: " + datas.MaxCOP);
-
-                    }
-                }
-            }
-        }
-
-
-        
 
     }
 }

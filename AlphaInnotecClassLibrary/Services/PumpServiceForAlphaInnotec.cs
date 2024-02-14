@@ -48,7 +48,7 @@ namespace AlphaInnotecClassLibrary.Services
 
 
         }
-        public void ChooseMethodForConvert(string typeFile, int[] outTemps, int[] flowTemps, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void ChooseMethodForConvert(string typeFile, int[] outTemps, int[] flowTemps, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
         {
             switch(typeFile)
             {
@@ -64,7 +64,7 @@ namespace AlphaInnotecClassLibrary.Services
             }
         }
         //Get already converted data(get first value where count == 2)
-        protected void GetConvertDataForWasser(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForWasser(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
         {
             for (int i = 0; i < outTemps.Length; i++)
             {
@@ -74,7 +74,7 @@ namespace AlphaInnotecClassLibrary.Services
             }
         }
         //Get already converted data(get first value where count == 2)
-        protected void GetConvertDataForSole(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForSole(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
         {
             for (int i = 0; i < outTemps.Length; i++)
             {
@@ -83,9 +83,8 @@ namespace AlphaInnotecClassLibrary.Services
                 ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
             }
         }
-        //Get already converted data(get first value where count == 2)
         //Get already converted data
-        protected void GetConvertDataForLuft(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForLuft(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
         {
             for (int i = 0; i < outTemps.Length; i++)
             {
