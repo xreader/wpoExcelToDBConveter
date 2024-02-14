@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestExel.StandartModels
 {
-    internal class StandartDataPump
+    public class StandartDataPump
     {
         public int ForTemp { get; set; }
         public int FlowTemp { get; set; }
