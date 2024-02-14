@@ -1,4 +1,4 @@
-﻿class DataPump
+﻿public class DataPump
 {
     public int Temp { get; set; }
     public int MaxVorlauftemperatur { get; set; }

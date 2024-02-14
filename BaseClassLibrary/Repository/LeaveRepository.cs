@@ -9,7 +9,7 @@ using TestExel.DBModels;
 
 namespace TestExel.Repository
 {
-    internal class LeaveRepository
+    public class LeaveRepository
     {
         private readonly ApplicationDBContext _context;
         public LeaveRepository(ApplicationDBContext context)
@@ -28,15 +28,19 @@ namespace TestExel.Repository
 
             return result;
         }
-        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => x.value.Contains(pumpName) && x.objectid_fk_properties_objectid== 1320).ToListAsync();
+        public async Task<Leave> FindLeaveByTextId(int textId) => await _context.leaves.FirstOrDefaultAsync(x => x.value_as_int == textId && x.objectid_fk_properties_objectid == 1320);
+
+        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => (x.value == pumpName || x.value.Contains(pumpName + "+")) && (x.objectid_fk_properties_objectid== 1320 || x.objectid_fk_properties_objectid == 1006)).ToListAsync();
         public async Task<int> GetCountLeavesById(int id) => await _context.leaves.CountAsync(x => x.nodeid_fk_nodes_nodeid == id);  
         public async Task<List<Leave>> GetLeavesById(int id) => await _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToListAsync();
 
         public async Task<Leave> GetBigHashFor35GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
         public async Task<Leave> GetBigHashFor55GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1466 && x.nodeid_fk_nodes_nodeid == wpId);
         public async Task<Leave> GetBigHashFor35GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1364 && x.nodeid_fk_nodes_nodeid == wpId);
-        public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);        
-        
+        public async Task<Leave> GetBigHashFor55GradForMittelKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1366 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor35GradForWarmKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1468 && x.nodeid_fk_nodes_nodeid == wpId);
+        public async Task<Leave> GetBigHashFor55GradForWarmKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1470 && x.nodeid_fk_nodes_nodeid == wpId);
+
         public async Task<bool> CreateLeave(Leave leave)
         {
             await _context.leaves.AddAsync(leave);

@@ -1,4 +1,5 @@
 ﻿
+using AlphaInnotecClassLibrary;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
@@ -15,68 +16,41 @@ using System.Security.Policy;
 using TestExel;
 using TestExel.DBConnection;
 using TestExel.DBModels;
+using TestExel.Models;
 using TestExel.Services;
+using TestExel.ServicesForDB;
 using TestExel.StandartModels;
+using YorkClassLibrary;
 
 class Program
 {
     static async Task Main()
-    {
-        Console.WriteLine("Write full path to Excel File:");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\test.xlsx"
-        string excelFilePath = Console.ReadLine();
-
-        Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
-        string dataBasePath = Console.ReadLine();
-
-
-        var pumpService = new PumpService(excelFilePath);
-
-        var standartPumps = pumpService.CreateListStandartPumps();
-        var oldPumps = pumpService.GetAllPumpsFromExel();
-
-        int[] outTempMidFor35 = { -25, -10, -7, 2, 7, 12 };
-        int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
-        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor35, inTempMidFor35, 35, "2");
-        int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
-        int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
-        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempMidFor55, inTempMidFor55, 55, "2");
-
-        int[] outTempColdFor35 = { -25, -22, -15, -7, 2, 7, 12 };
-        int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
-        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor35, inTempColdFor35, 35, "1");
-        int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
-        int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
-        pumpService.GetDataInListStandartPumps(standartPumps, oldPumps, outTempColdFor55, inTempMidCold55, 55, "1");
-        
-        
-        var pumpServiceForDB = new PumpServiceForDB(dataBasePath);
+    { 
+        //Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
+        string dataBasePath = "D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";// Console.ReadLine();        
 
         while (true)
         {
             Console.WriteLine();
-            Console.WriteLine("Choose operation: ");
-            Console.WriteLine("1. Update Dataen EN 14825 LG");
-            Console.WriteLine("2. Update Leistungsdaten");
-            var operation = Console.ReadLine();
-            switch (operation)
+            Console.WriteLine("Choose Company: ");
+            Console.WriteLine("1. York");
+            Console.WriteLine("2. Alpha Innotec");
+            var company = Console.ReadLine();
+            switch (company)
             {
                 case "1":
-                    foreach (var pump in standartPumps)
-                    {
-                        await pumpServiceForDB.ChangeDataenEN14825LGInDbByExcelData(pump);
-                    }
+                    var york = new LogicYork();
+                    await york.GoalLogicYourk(dataBasePath);
                     break;
                 case "2":
-                    foreach (var pump in oldPumps)
-                    {
-                        await pumpServiceForDB.ChangeLeistungsdatenInDbByExcelData(pump);
-                    }
+                    var alphaInnotec = new LogicAlphaInnotec();
+                    await alphaInnotec.GoalLogicAlphaInnotec(dataBasePath);
                     break;
                 default:
                     Console.WriteLine("Error input");
                     break;
             }
-        }      
+        }
     }
 }
     
