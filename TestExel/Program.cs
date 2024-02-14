@@ -28,6 +28,7 @@ class Program
     { 
         //Console.WriteLine("Write full path to Data Base:");//"D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db"
         string dataBasePath = "D:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";// Console.ReadLine();        
+
         while (true)
         {
             Console.WriteLine();
