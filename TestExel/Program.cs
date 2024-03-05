@@ -5,6 +5,7 @@ using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
 using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Spreadsheet;
+using HovalClassLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System;
@@ -35,6 +36,7 @@ class Program
             Console.WriteLine("Choose Company: ");
             Console.WriteLine("1. York");
             Console.WriteLine("2. Alpha Innotec");
+            Console.WriteLine("3. Hoval");
             var company = Console.ReadLine();
             switch (company)
             {
@@ -45,6 +47,10 @@ class Program
                 case "2":
                     var alphaInnotec = new LogicAlphaInnotec();
                     await alphaInnotec.GoalLogicAlphaInnotec(dataBasePath);
+                    break;
+                case "3":
+                    var hoval = new LogicHoval();
+                    await hoval.GoalLogicHoval(dataBasePath);
                     break;
                 default:
                     Console.WriteLine("Error input");
