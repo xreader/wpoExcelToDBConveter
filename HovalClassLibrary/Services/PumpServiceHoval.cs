@@ -28,8 +28,7 @@ namespace HovalClassLibrary.Services
             {
                 var worksheet = workbook.Worksheet(i);
                 if (worksheet.Name.Contains("Heizen") && !worksheet.Name.Contains("Diagramme"))
-                {
-                    Console.WriteLine(worksheet.Name);
+                {                    
                     var pump = new Pump(worksheet);
                     var cellsWithNamePump = GetCellWithNamePump(worksheet);
                     foreach(var cellWithNamePump in cellsWithNamePump)
