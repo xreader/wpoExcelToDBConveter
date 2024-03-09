@@ -1,9 +1,12 @@
 ﻿using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TestExel.Models;
 using TestExel.Services;
@@ -29,27 +32,27 @@ namespace HovalClassLibrary.Services
                 var worksheet = workbook.Worksheet(i);
                 if (worksheet.Name.Contains("Heizen") && !worksheet.Name.Contains("Diagramme"))
                 {                    
-                    var pump = new Pump(worksheet);
+                   
                     var cellsWithNamePump = GetCellWithNamePump(worksheet);
                     foreach(var cellWithNamePump in cellsWithNamePump)
                     {
+                        var pump = new Pump(worksheet);
                         var cellWithDataPump = GetCellWithDataForPump(worksheet, cellWithNamePump);
-                        foreach (var address in cellWithDataPump)
-                        {
-                            Console.WriteLine(address);
-                        }
-                    }                                       
 
-                }
+                        pump.Name = cellWithNamePump.Data.ToString();
+                        var cellWith35GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "35");
+                        if (cellWith35GradData != null)
+                            GetData(cellWith35GradData, 35, pump,worksheet);
+                        var cellWith55GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "55");
+                        if (cellWith55GradData != null)
+                            GetData(cellWith55GradData, 55, pump, worksheet);
 
-                //pump.Name = worksheet.Name;
-                //pump.GetData(2, "B", "C", "I", 35);
-                //pump.GetData(13, "B", "C", "I", 55);
-                //if (pump != null && pump.Name != "")
-                //    pumps.Add(pump);
-
+                        if (pump != null && pump.Name != "")
+                            pumps.Add(pump);
+                    }
+                }              
             }
-            //RoundCOPAndP(pumps);
+            RoundCOPAndP(pumps);
             return pumps;
         }
 
@@ -64,7 +67,7 @@ namespace HovalClassLibrary.Services
             foreach (var cell in range.CellsUsed())
             {
                 // Добавляем адрес ячейки в список
-                cellAddresses.Add(new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString()));
+                cellAddresses.Add(new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString()));                
             }           
             return cellAddresses;
         }
@@ -87,6 +90,73 @@ namespace HovalClassLibrary.Services
             }
             
             return cellAddresses;
+        }
+
+        public void GetData(Cell adressFirstCell,int tempWaterIn, Pump pump, IXLWorksheet _sheet)
+        {
+            if (pump.Data == null)
+                pump.Data = new Dictionary<int, List<DataPump>>();
+            // Номер строки, содержащей данные
+            int rowNumber = adressFirstCell.Num;
+
+            // Буква столбца, с которого начинаются данные
+            string startColumnLetter = adressFirstCell.Letter;
+
+            // Получаем индекс столбца по его букве
+            int startColumnIndex = XLHelper.GetColumnNumberFromLetter(startColumnLetter) + 1;
+
+            
+            for (int i = 0; i < 10; i++)
+            {
+
+                var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
+                pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
+                if (datasPump == null)
+                    datasPump = new List<DataPump>();
+
+                datasPump.Add(new DataPump
+                {
+                    Temp = tempWaterIn,
+                    MinHC = Convert.ToDouble(cellDataList[5]),
+                    MidHC = Convert.ToDouble(cellDataList[2]),
+                    MaxHC = Convert.ToDouble(cellDataList[2]),
+                    MinCOP = Convert.ToDouble(cellDataList[6]),
+                    MidCOP = Convert.ToDouble(cellDataList[3]),
+                    MaxCOP = Convert.ToDouble(cellDataList[3]),
+                    MaxVorlauftemperatur = 666
+                });
+
+
+
+                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cellDataList[0])))
+                    pump.Data.Add(Convert.ToInt32(cellDataList[0]), datasPump);
+                rowNumber++;
+            }
+           
+
+
+        }
+        public List<string> GetDataInRow(IXLWorksheet _sheet, int rowNumber, int startColumnIndex)
+        {
+            // Создаем список для хранения данных из ячеек
+            List<string> cellDataList = new List<string>();
+            // Проходимся по каждому столбцу, начиная с указанного
+            for (int columnIndex = startColumnIndex; ; columnIndex++)
+            {
+                // Получаем значение ячейки
+                string cellValue = _sheet.Cell(rowNumber, columnIndex).GetString();
+
+                // Проверяем, является ли значение пустым
+                if (string.IsNullOrWhiteSpace(cellValue))
+                {
+                    // Если значение пустое, это означает, что строка закончилась, выходим из цикла
+                    break;
+                }
+
+                // Добавляем значение ячейки в список
+                cellDataList.Add(cellValue);
+            }
+            return cellDataList;
         }
     }
 }
