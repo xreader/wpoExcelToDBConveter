@@ -33,8 +33,8 @@ namespace YorkClassLibrary
             int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
             pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor35, inTempColdFor35, 35, "1");
             int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
-            int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
-            pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor55, inTempMidCold55, 55, "1");
+            int[] inTempColdFor55 = { 55, 55, 55, 44, 37, 32, 30 };
+            pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor55, inTempColdFor55, 55, "1");
             var pumpServiceForDBForYork = new PumpServiceForDBYork(dataBasePath);
             bool exit = true;
             while (exit)

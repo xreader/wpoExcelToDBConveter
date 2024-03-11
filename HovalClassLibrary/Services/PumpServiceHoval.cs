@@ -177,10 +177,7 @@ namespace HovalClassLibrary.Services
                 {
 
                     var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
-                    if(cellDataList == null)
-                    {
-                        Console.WriteLine();
-                    }
+
                     pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
                     if (datasPump == null)
                         datasPump = new List<DataPump>();
