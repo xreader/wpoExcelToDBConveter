@@ -46,7 +46,7 @@ namespace HovalClassLibrary.Services
                         var cellWith55GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "55");
                         if (cellWith55GradData != null)
                             GetData(cellWith55GradData, 55, pump, worksheet);
-
+                        GetMaxForlauftemperatur(cellWithDataPump, pump, worksheet);
                         if (pump != null && pump.Name != "")
                             pumps.Add(pump);
                     }
@@ -74,10 +74,9 @@ namespace HovalClassLibrary.Services
 
         public List<Cell> GetCellWithDataForPump(IXLWorksheet _sheet, Cell cellWithNamePump)
         {
-            //Получаем список с ячейками где есть название насоса
 
             // Select cells by range
-            var range = _sheet.Range(cellWithNamePump.Letter+cellWithNamePump.Num + ":" + cellWithNamePump.Letter + 300);
+            var range = _sheet.Range(cellWithNamePump.Letter+(cellWithNamePump.Num+1) + ":" + cellWithNamePump.Letter + 300);
             // Список для хранения адресов ячеек с заданным содержимым
             List<Cell> cellAddresses = new List<Cell>();
             // Проходим по каждой ячейке в диапазоне
@@ -157,6 +156,66 @@ namespace HovalClassLibrary.Services
                 cellDataList.Add(cellValue);
             }
             return cellDataList;
+        }
+
+        public void GetMaxForlauftemperatur(List<Cell> adressCells,Pump pump , IXLWorksheet _sheet)
+        {
+            var lastCell = adressCells.FirstOrDefault(x => x.Data == "55");
+;           foreach (Cell cell in adressCells.Where(x => Convert.ToInt32(x.Data) > 55))
+            {
+                // Номер строки, содержащей данные
+                int rowNumber = cell.Num;
+
+                // Буква столбца, с которого начинаются данные
+                string startColumnLetter = cell.Letter;
+
+                // Получаем индекс столбца по его букве
+                int startColumnIndex = XLHelper.GetColumnNumberFromLetter(startColumnLetter) + 1;
+
+
+                for (int i = 0; i < 10; i++)
+                {
+
+                    var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
+                    if(cellDataList == null)
+                    {
+                        Console.WriteLine();
+                    }
+                    pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
+                    if (datasPump == null)
+                        datasPump = new List<DataPump>();
+                    if(cellDataList.Count <= 1) 
+                    {
+                        foreach (var data in datasPump)
+                        {
+                            data.MaxVorlauftemperatur = Convert.ToInt32(lastCell.Data);
+                        }
+
+                    }
+                    else
+                    {
+                        if (cellDataList[2] == "-" || cellDataList[2] == "" || cellDataList[2] == null)
+                        {
+                            foreach (var data in datasPump)
+                            {
+                                data.MaxVorlauftemperatur = Convert.ToInt32(lastCell.Data);
+                            }
+                        }
+                        else
+                        {
+                            foreach (var data in datasPump)
+                            {
+                                data.MaxVorlauftemperatur = Convert.ToInt32(cell.Data);
+                            }
+                        }
+                    }
+                    
+
+                    rowNumber++;
+                    
+                }
+                lastCell = cell;
+            }
         }
     }
 }
