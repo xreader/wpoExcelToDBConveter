@@ -22,9 +22,9 @@ namespace TestExel.Services
                 MinHC = dataPump.MinHC,
                 MidHC = dataPump.MidHC,
                 MaxHC = dataPump.MaxHC,
-                MinCOP = dataPump.MinCOP < 1 ? 1 : dataPump.MinCOP,
-                MidCOP = dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP,
-                MaxCOP = dataPump.MaxCOP < 1 ? 1 : dataPump.MaxCOP,
+                MinCOP = dataPump.MinCOP == 0 ? 0:dataPump.MinCOP == 0 ? 0 : dataPump.MinCOP < 1 ? 1 : dataPump.MinCOP,
+                MidCOP = dataPump.MidCOP == 0 ? 0 : dataPump.MidCOP == 0 ? 0 : dataPump.MidCOP < 1 ? 1 : dataPump.MidCOP,
+                MaxCOP = dataPump.MaxCOP == 0 ? 0 : dataPump.MaxCOP == 0 ? 0 : dataPump.MaxCOP < 1 ? 1 : dataPump.MaxCOP,
                 MaxVorlauftemperatur = dataPump.MaxVorlauftemperatur
             };
         }

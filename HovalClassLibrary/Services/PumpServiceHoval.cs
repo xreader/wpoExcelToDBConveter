@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using TestExel.Models;
 using TestExel.Services;
+using TestExel.StandartModels;
+using static HovalClassLibrary.Services.PumpServiceHoval;
 
 namespace HovalClassLibrary.Services
 {
@@ -30,48 +32,27 @@ namespace HovalClassLibrary.Services
             for (int i = 1; i <= sheetsCount; i++)
             {
                 var worksheet = workbook.Worksheet(i);
-                if (worksheet.Name.Contains("Heizen") && !worksheet.Name.Contains("Diagramme"))
-                {                    
-                   
-                    var cellsWithNamePump = GetCellWithNamePump(worksheet);
-                    foreach(var cellWithNamePump in cellsWithNamePump)
-                    {
-                        var pump = new Pump(worksheet);
-                        var cellWithDataPump = GetCellWithDataForPump(worksheet, cellWithNamePump);
+                var cell = worksheet.Cell("A3");
+                var cellWithNamePump = new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString());
 
-                        pump.Name = cellWithNamePump.Data.ToString();
-                        var cellWith35GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "35");
-                        if (cellWith35GradData != null)
-                            GetData(cellWith35GradData, 35, pump,worksheet);
-                        var cellWith55GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "55");
-                        if (cellWith55GradData != null)
-                            GetData(cellWith55GradData, 55, pump, worksheet);
-                        GetMaxForlauftemperatur(cellWithDataPump, pump, worksheet);
-                        if (pump != null && pump.Name != "")
-                            pumps.Add(pump);
-                    }
-                }              
+                var pump = new Pump(worksheet);
+                var cellWithDataPump = GetCellWithDataForPump(worksheet, cellWithNamePump);
+                var countTempOut = cellWithDataPump[1].Num - cellWithDataPump[0].Num;
+                pump.Name = cellWithNamePump.Data.ToString();
+                var cellWith35GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "35");
+                if (cellWith35GradData != null)
+                    GetData(cellWith35GradData, 35, pump, countTempOut, worksheet);
+                var cellWith55GradData = cellWithDataPump.FirstOrDefault(x => x.Data == "55");
+                if (cellWith55GradData != null)
+                    GetData(cellWith55GradData, 55, pump, countTempOut, worksheet);
+                GetMaxForlauftemperatur(cellWithDataPump, pump, worksheet, countTempOut);
+                if (pump != null && pump.Name != "")
+                    pumps.Add(pump);
+
             }
             RoundCOPAndP(pumps);
             return pumps;
         }
-
-        public List<Cell> GetCellWithNamePump(IXLWorksheet _sheet)
-        {
-            //Получаем список с ячейками где есть название насоса
-            // Select cells by range
-            var range = _sheet.Range("A3:IV3");
-            // Список для хранения адресов ячеек с заданным содержимым
-            List<Cell> cellAddresses = new List<Cell>();
-            // Проходим по каждой ячейке в диапазоне
-            foreach (var cell in range.CellsUsed())
-            {
-                // Добавляем адрес ячейки в список
-                cellAddresses.Add(new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString()));                
-            }           
-            return cellAddresses;
-        }
-
         public List<Cell> GetCellWithDataForPump(IXLWorksheet _sheet, Cell cellWithNamePump)
         {
 
@@ -91,7 +72,7 @@ namespace HovalClassLibrary.Services
             return cellAddresses;
         }
 
-        public void GetData(Cell adressFirstCell,int tempWaterIn, Pump pump, IXLWorksheet _sheet)
+        public void GetData(Cell adressFirstCell,int tempWaterIn, Pump pump, int countTempOut, IXLWorksheet _sheet)
         {
             if (pump.Data == null)
                 pump.Data = new Dictionary<int, List<DataPump>>();
@@ -105,22 +86,29 @@ namespace HovalClassLibrary.Services
             int startColumnIndex = XLHelper.GetColumnNumberFromLetter(startColumnLetter) + 1;
 
             
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < countTempOut; i++)
             {
 
                 var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
                 pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
                 if (datasPump == null)
                     datasPump = new List<DataPump>();
-
+                if (cellDataList.Contains("-"))
+                {
+                    // Замена всех вхождений "-" на "0" в каждой строке списка
+                    for (int j = 1; j < cellDataList.Count; j++)
+                    {
+                        cellDataList[j] = cellDataList[j].Replace("-", "0");
+                    }
+                }
                 datasPump.Add(new DataPump
                 {
                     Temp = tempWaterIn,
-                    MinHC = Convert.ToDouble(cellDataList[5]),
-                    MidHC = Convert.ToDouble(cellDataList[2]),
+                    MinHC = Convert.ToDouble(cellDataList[8]),
+                    MidHC = Convert.ToDouble(cellDataList[5]),
                     MaxHC = Convert.ToDouble(cellDataList[2]),
-                    MinCOP = Convert.ToDouble(cellDataList[6]),
-                    MidCOP = Convert.ToDouble(cellDataList[3]),
+                    MinCOP = Convert.ToDouble(cellDataList[9]),
+                    MidCOP = Convert.ToDouble(cellDataList[6]),
                     MaxCOP = Convert.ToDouble(cellDataList[3]),
                     MaxVorlauftemperatur = 666
                 });
@@ -158,10 +146,10 @@ namespace HovalClassLibrary.Services
             return cellDataList;
         }
 
-        public void GetMaxForlauftemperatur(List<Cell> adressCells,Pump pump , IXLWorksheet _sheet)
+        public void GetMaxForlauftemperatur(List<Cell> adressCells,Pump pump , IXLWorksheet _sheet, int countTempOut)
         {
-            var lastCell = adressCells.FirstOrDefault(x => x.Data == "55");
-;           foreach (Cell cell in adressCells.Where(x => Convert.ToInt32(x.Data) > 55))
+            var lastCell = adressCells.FirstOrDefault(x => x.Data == "35");
+;           foreach (Cell cell in adressCells.Where(x => Convert.ToInt32(x.Data) > 35))
             {
                 // Номер строки, содержащей данные
                 int rowNumber = cell.Num;
@@ -173,7 +161,7 @@ namespace HovalClassLibrary.Services
                 int startColumnIndex = XLHelper.GetColumnNumberFromLetter(startColumnLetter) + 1;
 
 
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < countTempOut; i++)
                 {
 
                     var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
@@ -191,7 +179,7 @@ namespace HovalClassLibrary.Services
                     }
                     else
                     {
-                        if (cellDataList[2] == "-" || cellDataList[2] == "" || cellDataList[2] == null)
+                        if (cellDataList.Skip(1).All(item => item == "-"))
                         {
                             foreach (var data in datasPump)
                             {
@@ -213,6 +201,50 @@ namespace HovalClassLibrary.Services
                 }
                 lastCell = cell;
             }
+        }
+        public List<StandartPump> GetDataInListStandartPumpsForHoval(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
+        {
+            foreach (var oldPump in oldPumps)
+            {
+                int[] flowTemps2;
+                int[] outTemps2;
+                if (climat == "2" || climat == "1")
+                {
+
+                    int minKey = oldPump.Data.Keys.Min();
+                    outTemps2 = new int[] { minKey }.Concat(outTemps).ToArray();
+                    flowTemps2 = new int[] { forTemp }.Concat(flowTemps).ToArray();
+                }
+                else
+                {
+                    outTemps2 = outTemps;
+                    flowTemps2 = flowTemps;
+                }
+
+                //Get the pump data dictionary
+                Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
+
+                if (standartPumps.Any(x => x.Name == oldPump.Name))
+                {
+                    Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
+                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary);
+
+                }
+                else
+                {
+                    Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
+                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary);
+                    var standartPump = new StandartPump()
+                    {
+                        Name = oldPump.Name,
+                        Data = newDictionary
+                    };
+                    standartPumps.Add(standartPump);
+                }
+
+            }
+            return standartPumps;
+
         }
     }
 }
