@@ -43,9 +43,9 @@ namespace TestExel.Services
                 MinHC = Math.Round(oldDataWithHighGrad.MinHC - dif * (oldDataWithHighGrad.MinHC - oldDataWithLowGrad.MinHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MidHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
                 MaxHC = Math.Round(oldDataWithHighGrad.MaxHC - dif * (oldDataWithHighGrad.MaxHC - oldDataWithLowGrad.MaxHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2),
-                MinCOP = minCop < 1 ? 1 : minCop,
-                MidCOP = midCop < 1 ? 1 : midCop,
-                MaxCOP = maxCop < 1 ? 1 : maxCop,
+                MinCOP = minCop == 0 ? 0 : minCop == 0 ? 0 : minCop < 1 ? 1 : minCop,
+                MidCOP = midCop == 0 ? 0 : midCop == 0 ? 0 : midCop < 1 ? 1 : midCop,
+                MaxCOP = maxCop == 0 ? 0 : maxCop == 0 ? 0 : maxCop < 1 ? 1 : maxCop,
                 MaxVorlauftemperatur = oldDataWithLowGrad.MaxVorlauftemperatur
             };
         }

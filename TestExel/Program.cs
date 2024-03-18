@@ -41,16 +41,16 @@ class Program
             switch (company)
             {
                 case "1":
-                    var york = new LogicYork();
-                    await york.GoalLogicYourk(dataBasePath);
+                    var york = new LogicYork(dataBasePath);
+                    await york.GoalLogicYourk();
                     break;
                 case "2":
-                    var alphaInnotec = new LogicAlphaInnotec();
-                    await alphaInnotec.GoalLogicAlphaInnotec(dataBasePath);
+                    var alphaInnotec = new LogicAlphaInnotec(dataBasePath);
+                    await alphaInnotec.GoalLogicAlphaInnotec();
                     break;
                 case "3":
-                    var hoval = new LogicHoval();
-                    await hoval.GoalLogicHoval(dataBasePath);
+                    var hoval = new LogicHoval(dataBasePath);
+                    await hoval.GoalLogicHoval();
                     break;
                 default:
                     Console.WriteLine("Error input");

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Office2013.Drawing.ChartStyle;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,15 @@ namespace YorkClassLibrary
 {
     public class LogicYork
     {
-        public async Task GoalLogicYourk( string dataBasePath)
+        private const int ID_Company_In_DB = 135287;
+        private const int Num_Climate = 2; //Number of climates in which the pumps operate
+        private const string Type_Pump = "Luft"; //In York all pumps are only Luft
+        private readonly PumpServiceForDBYork _pumpServiceForDBYork;
+        public LogicYork(string dataBasePath)
+        {
+            _pumpServiceForDBYork = new PumpServiceForDBYork(dataBasePath);
+        }
+        public async Task GoalLogicYourk()
         {
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             Console.WriteLine("Write full path to Excel File for York:");
@@ -35,7 +44,7 @@ namespace YorkClassLibrary
             int[] outTempColdFor55 = { -20, -15, -10, -7, 2, 7, 12 };
             int[] inTempColdFor55 = { 55, 55, 55, 44, 37, 32, 30 };
             pumpServiceForYork.GetDataInListStandartPumps(standartPumpsForYork, oldPumpsForYork, outTempColdFor55, inTempColdFor55, 55, "1");
-            var pumpServiceForDBForYork = new PumpServiceForDBYork(dataBasePath);
+            
             bool exit = true;
             while (exit)
             {
@@ -51,13 +60,13 @@ namespace YorkClassLibrary
                         foreach (var pump in standartPumpsForYork)
                         {
                             
-                            await pumpServiceForDBForYork.ChangeDataenEN14825LGInDbByExcelData(pump);
+                            await _pumpServiceForDBYork.ChangeDataenEN14825LGInDbByExcelData(pump, Type_Pump, ID_Company_In_DB,Num_Climate);
                         }
                         break;
                     case "2":
                         foreach (var pump in oldPumpsForYork)
                         {
-                            await pumpServiceForDBForYork.ChangeLeistungsdatenInDbByExcelData(pump);
+                            await _pumpServiceForDBYork.ChangeLeistungsdatenInDbByExcelData(pump, Type_Pump, ID_Company_In_DB);
                         }
                         break;
                     case "3":

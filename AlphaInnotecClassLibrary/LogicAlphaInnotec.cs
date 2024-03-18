@@ -17,9 +17,14 @@ namespace AlphaInnotecClassLibrary
     {
         private PumpServiceForAlphaInnotec _pumpServiceForAlphaInnotec;
         private PumpServiceForDBAlphaInotec _pumpDBServiceForAlphaInnotec;
-        public async Task GoalLogicAlphaInnotec(string dataBasePath)
+        private const int ID_Company_In_DB = 7782;
+        private const int Num_Climate = 3; //Number of climates in which the pumps operate
+        public LogicAlphaInnotec(string dataBasePath) 
         {
             _pumpDBServiceForAlphaInnotec = new PumpServiceForDBAlphaInotec(dataBasePath);
+        }       
+        public async Task GoalLogicAlphaInnotec()
+        {           
             string excelFilePath;
             bool exit = true;
             while (exit)
@@ -109,13 +114,13 @@ namespace AlphaInnotecClassLibrary
                     case "1":
                         foreach (var pump in standartPumps)
                         {
-                            await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump, typePump);
+                            await _pumpDBServiceForAlphaInnotec.ChangeDataenEN14825LGInDbByExcelData(pump, typePump, ID_Company_In_DB, Num_Climate);
                         }
                         break;
                     case "2":
                         foreach (var pump in oldPumps)
                         {
-                            await _pumpDBServiceForAlphaInnotec.ChangeLeistungsdatenInDbByExcelData(pump, typePump);
+                            await _pumpDBServiceForAlphaInnotec.ChangeLeistungsdatenInDbByExcelData(pump, typePump, ID_Company_In_DB);
                             Console.WriteLine("OK!");
                         }
                         break;

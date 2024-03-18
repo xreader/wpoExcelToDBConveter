@@ -13,8 +13,15 @@ namespace HovalClassLibrary
 {
     public class LogicHoval
     {
-        public async Task GoalLogicHoval(string dataBasePath)
+        private const int ID_Company_In_DB = 143795;
+        private const int Num_Climate = 3; //Number of climates in which the pumps operate
+        private PumpServiceForDBHoval _pumpDBServiceForHoval; 
+        public LogicHoval(string dataBasePath)
         {
+            _pumpDBServiceForHoval = new PumpServiceForDBHoval(dataBasePath);
+        }
+        public async Task GoalLogicHoval()
+        {            
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             Console.WriteLine("Write full path to Excel File for Hoval:");
             var excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx";//Console.ReadLine();
@@ -45,66 +52,69 @@ namespace HovalClassLibrary
             int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
             _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
-            foreach (var pump in standartPumpsForHoval)
-            {
-                Console.WriteLine(pump.Name);
-
-                foreach (var kvp in pump.Data)
-                {
-                    Console.WriteLine($"Key: {kvp.Key}");
-
-                    foreach (var dataPump in kvp.Value)
-                    {
-                        Console.WriteLine($"Temp: {dataPump.ForTemp}");
-                        Console.WriteLine($"FlowTemp: {dataPump.FlowTemp}");
-                        Console.WriteLine($"Climate: {dataPump.Climate}");
-                        Console.WriteLine($"MaxVorlauftemperatur: {dataPump.MaxVorlauftemperatur}");
-                        Console.WriteLine($"MinHC: {dataPump.MinHC}");
-                        Console.WriteLine($"MidHC: {dataPump.MidHC}");
-                        Console.WriteLine($"MaxHC: {dataPump.MaxHC}");
-                        Console.WriteLine($"MinCOP: {dataPump.MinCOP}");
-                        Console.WriteLine($"MidCOP: {dataPump.MidCOP}");
-                        Console.WriteLine($"MaxCOP: {dataPump.MaxCOP}");
-
-                        Console.WriteLine();
-                    }
-                }
-            }
-
-            //var pumpServiceForDBForYork = new PumpServiceForDBHoval(dataBasePath);
-            //bool exit = true;
-            //while (exit)
+            //foreach (var pump in standartPumpsForHoval)
             //{
-            //    Console.WriteLine();
-            //    Console.WriteLine("Choose operation: ");
-            //    Console.WriteLine("1. Update Dataen EN 14825 LG");
-            //    Console.WriteLine("2. Update Leistungsdaten");
-            //    Console.WriteLine("3. Back!");
-            //    var operationForYork = Console.ReadLine();
-            //    switch (operationForYork)
-            //    {
-            //        case "1":
-            //            foreach (var pump in standartPumpsForHoval)
-            //            {
+            //    Console.WriteLine(pump.Name);
 
-            //                //await pumpServiceForDBForYork.ChangeDataenEN14825LGInDbByExcelData(pump);
-            //            }
-            //            break;
-            //        case "2":
-            //            foreach (var pump in oldPumpsForHoval)
-            //            {
-            //               //await pumpServiceForDBForYork.ChangeLeistungsdatenInDbByExcelData(pump);
-            //            }
-            //            break;
-            //        case "3":
-            //            exit = false;
-            //            break; // Go back to company selection
-            //        default:
-            //            Console.WriteLine("Error input");
-            //            break;
+            //    foreach (var kvp in pump.Data)
+            //    {
+            //        Console.WriteLine($"Key: {kvp.Key}");
+
+            //        foreach (var dataPump in kvp.Value)
+            //        {
+            //            Console.WriteLine($"Temp: {dataPump.ForTemp}");
+            //            Console.WriteLine($"FlowTemp: {dataPump.FlowTemp}");
+            //            Console.WriteLine($"Climate: {dataPump.Climate}");
+            //            Console.WriteLine($"MaxVorlauftemperatur: {dataPump.MaxVorlauftemperatur}");
+            //            Console.WriteLine($"MinHC: {dataPump.MinHC}");
+            //            Console.WriteLine($"MidHC: {dataPump.MidHC}");
+            //            Console.WriteLine($"MaxHC: {dataPump.MaxHC}");
+            //            Console.WriteLine($"MinCOP: {dataPump.MinCOP}");
+            //            Console.WriteLine($"MidCOP: {dataPump.MidCOP}");
+            //            Console.WriteLine($"MaxCOP: {dataPump.MaxCOP}");
+
+            //            Console.WriteLine();
+            //        }
             //    }
             //}
 
+            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
+
+        }
+        private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
+        {
+            bool exit = true;
+            while (exit)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Choose operation: ");
+                Console.WriteLine("1. Update Dataen EN 14825 LG");
+                Console.WriteLine("2. Update Leistungsdaten");
+                Console.WriteLine("3. Back!");
+                var operationForAlpha = Console.ReadLine();
+                switch (operationForAlpha)
+                {
+                    case "1":
+                        foreach (var pump in standartPumps)
+                        {
+                            await _pumpDBServiceForHoval.ChangeDataenEN14825LGInDbByExcelData(pump, typePump, ID_Company_In_DB, Num_Climate);
+                        }
+                        break;
+                    case "2":
+                        foreach (var pump in oldPumps)
+                        {
+                            await _pumpDBServiceForHoval.ChangeLeistungsdatenInDbByExcelData(pump, typePump, ID_Company_In_DB);
+                            Console.WriteLine("OK!");
+                        }
+                        break;
+                    case "3":
+                        exit = false;
+                        break; // Go back to company selection
+                    default:
+                        Console.WriteLine("Error input");
+                        break;
+                }
+            }
         }
     }
 }
