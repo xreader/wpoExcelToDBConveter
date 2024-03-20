@@ -42,7 +42,7 @@ namespace AlphaInnotecClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
@@ -50,14 +50,14 @@ namespace AlphaInnotecClassLibrary
                     case "2":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Sole):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await SoleLogic(excelFilePath);
                         break;
                     case "3":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Alpha Innotec (Wasser):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine();//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await WasserLogic(excelFilePath);
                         break;

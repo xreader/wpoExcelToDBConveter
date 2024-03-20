@@ -24,7 +24,7 @@ namespace YorkClassLibrary
         {
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             Console.WriteLine("Write full path to Excel File for York:");
-            var excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\York.xlsx";//Console.ReadLine();
+            var excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\York.xlsx";
             //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 

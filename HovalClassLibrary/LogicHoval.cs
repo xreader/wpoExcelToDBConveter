@@ -13,7 +13,7 @@ namespace HovalClassLibrary
 {
     public class LogicHoval
     {
-        private const int ID_Company_In_DB = 143795;
+        private const int ID_Company_In_DB = 140798;
         private const int Num_Climate = 3; //Number of climates in which the pumps operate
         private PumpServiceForDBHoval _pumpDBServiceForHoval; 
         public LogicHoval(string dataBasePath)
@@ -21,37 +21,53 @@ namespace HovalClassLibrary
             _pumpDBServiceForHoval = new PumpServiceForDBHoval(dataBasePath);
         }
         public async Task GoalLogicHoval()
-        {            
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            Console.WriteLine("Write full path to Excel File for Hoval:");
-            var excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx";//Console.ReadLine();
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        {
+            string excelFilePath;
+            bool exit = true;
+            while (exit)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Choose Exel File For Hoval: ");
+                Console.WriteLine("1. For Luft");
+                Console.WriteLine("2. For Sole");
+                Console.WriteLine("3. For Wasser");
+                Console.WriteLine("4. Exit!");
+                var typePumpForAlphaInnotec = Console.ReadLine();
 
+                switch (typePumpForAlphaInnotec)
+                {
+                    case "1":
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        Console.WriteLine("Write full path to Excel File for Hoval (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx";//Console.ReadLine();
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        await LuftLogic(excelFilePath);
 
-            var _pumpServiceForHoval = new PumpServiceHoval(excelFilePath);
-            var standartPumpsForHoval = _pumpServiceForHoval.CreateListStandartPumps();
-            var oldPumpsForHoval = _pumpServiceForHoval.GetAllPumpsFromExel();
-            int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
-
-            int[] inTempMidFor35 = { 35, 34, 30, 27, 24 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2");
-
-            int[] outTempMidFor55 = {-10, -7, 2, 7, 12 };
-            int[] inTempMidFor55 = { 55, 52, 42, 36, 30 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2");
-
-            int[] outTempColdFor35 = { -10, -7, 2, 7, 12 };
-            int[] inTempColdFor35 = { 35, 30, 27, 25, 24 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1");
-            int[] outTempColdFor55 = { -10, -7, 2, 7, 12 };
-            int[] inTempMidCold55 = { 55, 44, 37, 32, 30 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1");
-            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
-            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3");
-            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
-            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
+                        break;
+                    case "2":
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        Console.WriteLine("Write full path to Excel File for Hoval (Sole):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx"
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSole.xlsx";//Console.ReadLine();
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        await SoleLogic(excelFilePath);
+                        break;
+                    case "3":
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        Console.WriteLine("Write full path to Excel File for Hoval (Wasser):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasser.xlsx";//Console.ReadLine();
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        await WasserLogic(excelFilePath);
+                        break;
+                    case "4":
+                        exit = false;
+                        break; // Go back to company selection
+                    default:
+                        Console.WriteLine("Error input");
+                        break;
+                }
+            }
+           
+            
             //foreach (var pump in standartPumpsForHoval)
             //{
             //    Console.WriteLine(pump.Name);
@@ -78,8 +94,93 @@ namespace HovalClassLibrary
             //    }
             //}
 
-            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
+           
 
+        }
+
+        private async Task LuftLogic(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new PumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllPumpsFromExel();
+            int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2");
+
+            int[] outTempMidFor55 = { -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = { 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2");
+
+            int[] outTempColdFor35 = { -10, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1");
+            int[] outTempColdFor55 = { -10, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
+            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
+        }
+        private async Task SoleLogic(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new PumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllPumpsFromExel();
+            int[] outTempMidFor35 = { -20, -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2", "Sole");
+
+            int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2", "Sole");
+
+            int[] outTempColdFor35 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1", "Sole");
+            int[] outTempColdFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1", "Sole");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3", "Sole");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Sole");
+            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Sole");
+        }
+        private async Task WasserLogic(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new PumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllPumpsFromExel();
+            int[] outTempMidFor35 = {-20, -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2","Wasser");
+
+            int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2", "Wasser");
+
+            int[] outTempColdFor35 = {-20, -10, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1", "Wasser");
+            int[] outTempColdFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1", "Wasser");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3", "Wasser");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Wasser");
+            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Wasser");
         }
         private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
         {

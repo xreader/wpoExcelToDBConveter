@@ -212,8 +212,17 @@ namespace HovalClassLibrary.Services
                 {
 
                     int minKey = oldPump.Data.Keys.Min();
-                    outTemps2 = new int[] { minKey }.Concat(outTemps).ToArray();
-                    flowTemps2 = new int[] { forTemp }.Concat(flowTemps).ToArray();
+                    if (!outTemps.Contains(minKey))
+                    {
+                        outTemps2 = new int[] { minKey }.Concat(outTemps).ToArray();
+                        flowTemps2 = new int[] { forTemp }.Concat(flowTemps).ToArray();
+                    }
+                    else
+                    {
+                        outTemps2 = outTemps;
+                        flowTemps2 = flowTemps;
+                    }
+                   
                 }
                 else
                 {
@@ -245,6 +254,91 @@ namespace HovalClassLibrary.Services
             }
             return standartPumps;
 
+        }
+
+        public List<StandartPump> GetDataInListStandartPumpsHoval(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat, string typeFile)
+        {
+            foreach (var oldPump in oldPumps)
+            {
+                //Get the pump data dictionary
+                Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
+                if (standartPumps.Any(x => x.Name == oldPump.Name))
+                {
+                    Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
+                    ChooseMethodForConvert(typeFile, outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+
+                }
+                else
+                {
+                    Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
+                    ChooseMethodForConvert(typeFile, outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    var standartPump = new StandartPump()
+                    {
+                        Name = oldPump.Name,
+                        Data = newDictionary
+                    };
+                    standartPumps.Add(standartPump);
+                }
+            }
+
+            return standartPumps;
+
+
+        }
+        private void ChooseMethodForConvert(string typeFile, int[] outTemps, int[] flowTemps, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        {
+            switch (typeFile)
+            {
+                case "Wasser":
+                    GetConvertDataForWasser(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    break;
+                case "Luft":
+                    //GetConvertDataForLuft(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    break;
+                case "Sole":
+                    GetConvertDataForSole(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    break;
+            }
+        }
+        //Get already converted data(get first value where count == 2)
+        private void GetConvertDataForWasser(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        {
+            for (int i = 0; i < outTemps.Length; i++)
+            {
+                if (!oldDictionary.Keys.Contains(outTemps[i]))
+                {
+                    var firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                    //Convert values
+                    ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                }
+                else
+                {
+                    int[] outT = new int[] { outTemps[i] };
+                    int[] flowT = new int[] { flowTemp[i] };
+                    GetConvertData(outT, flowT, forTemp, climat, newDictionary, oldDictionary);
+                }
+               
+            }
+        }
+        //Get already converted data(get first value where count == 2)
+        private void GetConvertDataForSole(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        {
+            for (int i = 0; i < outTemps.Length; i++)
+            {
+                if (!oldDictionary.Keys.Contains(outTemps[i]))
+                {
+                    var firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                    //Convert values
+                    ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                }
+                else
+                {
+                    int[] outT = new int[] { outTemps[i] };
+                    int[] flowT = new int[] { flowTemp[i] };
+                    GetConvertData(outT, flowT, forTemp, climat, newDictionary, oldDictionary);
+                }
+
+            }
         }
     }
 }
