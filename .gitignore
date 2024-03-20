@@ -372,3 +372,7 @@ FodyWeavers.xsd
 /TestExel/York.xlsx
 /TestExel/Hoval.xlsx
 /TestExel/HovalLuft.xlsx
+/TestExel/HovalSole.xlsx
+/TestExel/HovalSoleNicht_verstellbar.xlsx
+/TestExel/HovalWasser.xlsx
+/TestExel/HovalWasserNicht_verstellbar.xlsx
