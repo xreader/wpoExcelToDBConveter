@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BaseClassLibrary.Models;
+using BaseClassLibrary.StandartModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +12,7 @@ namespace TestExel.Services
 {
     public class PumpService
     {
-        public List<StandartPump> CreateListStandartPumps() => new List<StandartPump>();
+        public List<StandartPump> CreateListStandartPumps() => new List<StandartPump>();       
         //Creating a new data object according to the standard when it is in the table
         protected StandartDataPump CreateStandartDataPump(DataPump dataPump, string climat)
         {
@@ -73,7 +75,7 @@ namespace TestExel.Services
             }).ToList();
 
             return oldDataPump;
-        }
+        }        
         //Convert the data
         protected void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary)
         {
@@ -130,7 +132,7 @@ namespace TestExel.Services
                     }
                 }
             }
-        }
+        }        
         //the method now only copies the values and transfers them to the standard,
         //provided that the temperature outside is already the same as in the old model and the temperature inside is also at the same temperature outside
         //and so far only for warm climates
@@ -189,5 +191,6 @@ namespace TestExel.Services
                 }
             }
         }
+        
     }
 }

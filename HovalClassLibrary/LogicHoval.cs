@@ -1,4 +1,6 @@
-﻿using HovalClassLibrary.DBService;
+﻿using BaseClassLibrary.Models;
+using BaseClassLibrary.StandartModels;
+using HovalClassLibrary.DBService;
 using HovalClassLibrary.Services;
 using System;
 using System.Collections.Generic;
@@ -31,7 +33,10 @@ namespace HovalClassLibrary
                 Console.WriteLine("1. For Luft");
                 Console.WriteLine("2. For Sole");
                 Console.WriteLine("3. For Wasser");
-                Console.WriteLine("4. Exit!");
+                Console.WriteLine("4. For Sole unregulated pumps");
+                Console.WriteLine("5. For Wasser unregulated pumps");
+                Console.WriteLine("6. For Luft unregulated pumps");
+                Console.WriteLine("7. Exit!");
                 var typePumpForAlphaInnotec = Console.ReadLine();
 
                 switch (typePumpForAlphaInnotec)
@@ -59,6 +64,22 @@ namespace HovalClassLibrary
                         await WasserLogic(excelFilePath);
                         break;
                     case "4":
+                        Console.WriteLine("Write full path to Excel File for Hoval (Sole unregulated pumps):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSoleNicht_verstellbar.xlsx";//Console.ReadLine();
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        await SoleLogicUnregulatedPumps(excelFilePath);
+                        break;
+                    case "5":
+                        Console.WriteLine("Write full path to Excel File for Hoval (Wasser unregulated pumps):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasserNicht_verstellbar.xlsx";//Console.ReadLine();
+                        await WasserLogicUnregulatedPumps(excelFilePath);
+                        break;
+                    case "6":
+                        Console.WriteLine("Write full path to Excel File for Hoval (Luft unregulated pumps):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
+                        excelFilePath = Console.ReadLine();
+                        await LuftLogicUnregulatedPumps(excelFilePath);
+                        break;
+                    case "7":
                         exit = false;
                         break; // Go back to company selection
                     default:
@@ -106,24 +127,24 @@ namespace HovalClassLibrary
             int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
 
             int[] inTempMidFor35 = { 35, 34, 30, 27, 24 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2");
 
             int[] outTempMidFor55 = { -10, -7, 2, 7, 12 };
             int[] inTempMidFor55 = { 55, 52, 42, 36, 30 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2");
 
             int[] outTempColdFor35 = { -10, -7, 2, 7, 12 };
             int[] inTempColdFor35 = { 35, 30, 27, 25, 24 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1");
             int[] outTempColdFor55 = { -10, -7, 2, 7, 12 };
             int[] inTempMidCold55 = { 55, 44, 37, 32, 30 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1");
             int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
             int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3");
             int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
-            _pumpServiceForHoval.GetDataInListStandartPumpsForHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
+            _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
             await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
         }
         private async Task SoleLogic(string excelFilePath)
@@ -182,6 +203,90 @@ namespace HovalClassLibrary
             _pumpServiceForHoval.GetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Wasser");
             await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Wasser");
         }
+        private async Task LuftLogicUnregulatedPumps(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new UnregulatedPumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListUnregulatedStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllUnregulatedPumpsFromExel();
+            int[] outTempMidFor35 = { -20, -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2", "Luft");
+
+            int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2", "Luft");
+
+            int[] outTempColdFor35 = { -22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1", "Luft");
+            int[] outTempColdFor55 = { -22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1", "Luft");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3", "Luft");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Luft");
+            await UnregulatedChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
+        }
+        private async Task SoleLogicUnregulatedPumps(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new UnregulatedPumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListUnregulatedStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllUnregulatedPumpsFromExel();
+            int[] outTempMidFor35 = { -20, -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2", "Sole");
+
+            int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = {   55, 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2", "Sole");
+
+            int[] outTempColdFor35 = {-22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1", "Sole");
+            int[] outTempColdFor55 = {-22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = {55, 55, 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1", "Sole");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3", "Sole");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Sole");            
+            await UnregulatedChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Sole");
+        }
+        private async Task WasserLogicUnregulatedPumps(string excelFilePath)
+        {
+            var _pumpServiceForHoval = new UnregulatedPumpServiceHoval(excelFilePath);
+            var standartPumpsForHoval = _pumpServiceForHoval.CreateListUnregulatedStandartPumps();
+            var oldPumpsForHoval = _pumpServiceForHoval.GetAllUnregulatedPumpsFromExel();
+            int[] outTempMidFor35 = { -20, -10, -7, 2, 7, 12 };
+
+            int[] inTempMidFor35 = { 35, 35, 34, 30, 27, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor35, inTempMidFor35, 35, "2", "Wasser");
+
+            int[] outTempMidFor55 = { -20, -10, -7, 2, 7, 12 };
+            int[] inTempMidFor55 = { 55, 55, 52, 42, 36, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempMidFor55, inTempMidFor55, 55, "2", "Wasser");
+
+            int[] outTempColdFor35 = { -22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 35, 30, 27, 25, 24 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor35, inTempColdFor35, 35, "1", "Wasser");
+            int[] outTempColdFor55 = { -22, -20, -15, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55, 55, 44, 37, 32, 30 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempColdFor55, inTempMidCold55, 55, "1", "Wasser");
+            int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
+            int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor35, inTempWarmFor35, 35, "3", "Wasser");
+            int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
+            int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
+            _pumpServiceForHoval.UnregulatedGetDataInListStandartPumpsHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3", "Wasser");
+            await UnregulatedChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Wasser");
+        }
         private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
         {
             bool exit = true;
@@ -217,5 +322,42 @@ namespace HovalClassLibrary
                 }
             }
         }
+        private async Task UnregulatedChooseWhatUpdate(List<UnregulatedStandartPump> standartPumps, List<UnregulatedPump> oldPumps, string typePump)
+        {
+            bool exit = true;
+            while (exit)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Choose operation: ");
+                Console.WriteLine("1. Update Dataen EN 14825 LG");
+                Console.WriteLine("2. Update Leistungsdaten");
+                Console.WriteLine("3. Back!");
+                var operationForAlpha = Console.ReadLine();
+                switch (operationForAlpha)
+                {
+                    case "1":
+                        foreach (var pump in standartPumps)
+                        {
+                            await _pumpDBServiceForHoval.UnregulatedChangeDataenEN14825LGInDbByExcelData(pump, typePump, ID_Company_In_DB, Num_Climate);
+                        }
+                        break;
+                    case "2":
+                        foreach (var pump in oldPumps)
+                        {
+                            await _pumpDBServiceForHoval.UnregulatedChangeLeistungsdatenInDbByExcelData(pump, typePump, ID_Company_In_DB);
+                            Console.WriteLine("OK!");
+                        }
+                        break;
+                    case "3":
+                        exit = false;
+                        break; // Go back to company selection
+                    default:
+                        Console.WriteLine("Error input");
+                        break;
+                }
+            }
+        }
+
+
     }
 }
