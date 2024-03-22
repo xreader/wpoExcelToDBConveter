@@ -84,29 +84,33 @@ namespace HovalClassLibrary.Services
             {
 
                 var cellDataList = GetDataInRow(_sheet, rowNumber, startColumnIndex);
-                pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
-                if (datasPump == null)
-                    datasPump = new List<UnregulatedDataPump>();
-                if (cellDataList.Contains("-"))
+                if (!cellDataList.Skip(1).All(item => item == "-"))
                 {
-                    // Замена всех вхождений "-" на "0" в каждой строке списка
-                    for (int j = 1; j < cellDataList.Count; j++)
+                    pump.Data.TryGetValue(Convert.ToInt32(cellDataList[0]), out var datasPump);
+                    if (datasPump == null)
+                        datasPump = new List<UnregulatedDataPump>();
+                    if (cellDataList.Contains("-"))
                     {
-                        cellDataList[j] = cellDataList[j].Replace("-", "0");
+                        // Замена всех вхождений "-" на "0" в каждой строке списка
+                        for (int j = 1; j < cellDataList.Count; j++)
+                        {
+                            cellDataList[j] = cellDataList[j].Replace("-", "0");
+                        }
                     }
+                    datasPump.Add(new UnregulatedDataPump
+                    {
+                        Temp = tempWaterIn,
+                        HC = Convert.ToDouble(cellDataList[1]),
+                        COP = Convert.ToDouble(cellDataList[3]),
+                        MaxVorlauftemperatur = 666
+                    });
+
+
+
+                    if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cellDataList[0])))
+                        pump.Data.Add(Convert.ToInt32(cellDataList[0]), datasPump);
                 }
-                datasPump.Add(new UnregulatedDataPump
-                {
-                    Temp = tempWaterIn,
-                    HC = Convert.ToDouble(cellDataList[2]),
-                    COP = Convert.ToDouble(cellDataList[3]),
-                    MaxVorlauftemperatur = 666
-                });
-
-
-
-                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cellDataList[0])))
-                    pump.Data.Add(Convert.ToInt32(cellDataList[0]), datasPump);
+                    
                 rowNumber++;
             }
 

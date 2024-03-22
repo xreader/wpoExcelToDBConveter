@@ -15,7 +15,7 @@ namespace HovalClassLibrary
 {
     public class LogicHoval
     {
-        private const int ID_Company_In_DB = 140798;
+        private const int ID_Company_In_DB = 141876;
         private const int Num_Climate = 3; //Number of climates in which the pumps operate
         private PumpServiceForDBHoval _pumpDBServiceForHoval; 
         public LogicHoval(string dataBasePath)

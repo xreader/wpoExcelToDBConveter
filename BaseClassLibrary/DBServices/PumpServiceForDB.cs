@@ -142,7 +142,7 @@ namespace TestExel.ServicesForDB
                     int gradInseide = 35;
                     string bigHash = "";
                     var wpId = wp.nodeid_fk_nodes_nodeid;
-                    var leavesIdWithOldDataList = await _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
+                    var leavesIdWithOldDataList = await _nodeRepository.UnregularedGetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
                     if (leavesIdWithOldDataList.Count > 0)
                     {
                         var actuelIndexLeaveIdInList = 0;
@@ -345,6 +345,7 @@ namespace TestExel.ServicesForDB
                         //If there are such records, we simply update them and delete duplicates
                         if (listWithLeavesForUpdate.Count > 0)
                         {
+                            Console.WriteLine("Update Leistungdaten");
                             //We take the first entry for updating; subsequent repeated ones must be deleted! and must be removed both from the database and from the list
                             var leavesForUpdate = listWithLeavesForUpdate[0];
                             //Finding the Heizleistung - P and Update
