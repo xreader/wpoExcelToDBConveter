@@ -37,6 +37,7 @@ class Program
             Console.WriteLine("1. York");
             Console.WriteLine("2. Alpha Innotec");
             Console.WriteLine("3. Hoval");
+            Console.WriteLine("4. Remeha");
             var company = Console.ReadLine();
             switch (company)
             {
@@ -51,6 +52,10 @@ class Program
                 case "3":
                     var hoval = new LogicHoval(dataBasePath);
                     await hoval.GoalLogicHoval();
+                    break;
+                case "4":
+                    //var remeha = new LogicRemeha(dataBasePath);
+                    //await remeha.GoalLogicRemeha();
                     break;
                 default:
                     Console.WriteLine("Error input");

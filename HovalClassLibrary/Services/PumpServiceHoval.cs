@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -155,6 +156,7 @@ namespace HovalClassLibrary.Services
         public void GetMaxForlauftemperatur(List<Cell> adressCells,Pump pump , IXLWorksheet _sheet, int countTempOut)
         {
             var lastCell = adressCells.FirstOrDefault(x => x.Data == "35");
+            var listWithReadyMaxVor = new List<string>();
 ;           foreach (Cell cell in adressCells.Where(x => Convert.ToInt32(x.Data) > 35))
             {
                 // Номер строки, содержащей данные
@@ -183,7 +185,7 @@ namespace HovalClassLibrary.Services
                         }
 
                     }
-                    else
+                    else if(!listWithReadyMaxVor.Contains(cellDataList[0]))
                     {
                         if (cellDataList.Skip(1).All(item => item == "-"))
                         {
@@ -191,6 +193,7 @@ namespace HovalClassLibrary.Services
                             {
                                 data.MaxVorlauftemperatur = Convert.ToInt32(lastCell.Data);
                             }
+                            listWithReadyMaxVor.Add(cellDataList[0]);
                         }
                         else
                         {
@@ -198,6 +201,7 @@ namespace HovalClassLibrary.Services
                             {
                                 data.MaxVorlauftemperatur = Convert.ToInt32(cell.Data);
                             }
+
                         }
                     }
                     
@@ -218,7 +222,11 @@ namespace HovalClassLibrary.Services
                 if (climat == "2" || climat == "1")
                 {
 
-                    int minKey = oldPump.Data.Keys.Min();
+                    int minKey = oldPump.Data
+                                .Where(pair => pair.Value.Any(data => data.Temp == forTemp))
+                                .Select(pair => pair.Key)
+                                .DefaultIfEmpty() // Возвращаем значение по умолчанию (0), если нет удовлетворяющего ключа
+                                .Min();
                     if (!outTemps.Contains(minKey))
                     {
                         outTemps2 = new int[] { minKey }.Concat(outTemps).ToArray();
@@ -243,13 +251,13 @@ namespace HovalClassLibrary.Services
                 if (standartPumps.Any(x => x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
-                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary, oldPump);
 
                 }
                 else
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertData(outTemps2, flowTemps2, forTemp, climat, newDictionary, oldDictionary, oldPump);
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
@@ -272,13 +280,13 @@ namespace HovalClassLibrary.Services
                 if (standartPumps.Any(x => x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
-                    GetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldPump, typeFile);
 
                 }
                 else
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-                    GetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldPump, typeFile);
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
@@ -298,21 +306,42 @@ namespace HovalClassLibrary.Services
 
         
         //Get already converted data(get first value where count == 2)
-        private void GetConvertDataAndCheckOutTemp(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataAndCheckOutTemp(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump, string typeFile)
         {
+            Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
             for (int i = 0; i < outTemps.Length; i++)
             {
                 if (!oldDictionary.Keys.Contains(outTemps[i]))
                 {
-                    var firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                    List<DataPump> firstDataForEachKey = new List<DataPump>();
+                    switch (typeFile)
+                    {
+                        case "Wasser":
+                            oldDictionary.TryGetValue(10, out List<DataPump> dataWasser);
+                            if (dataWasser != null)
+                                firstDataForEachKey = dataWasser;
+                            else
+                                firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                        case "Sole":
+                            oldDictionary.TryGetValue(0, out List<DataPump> dataSole);
+                            if (dataSole != null)
+                                firstDataForEachKey = dataSole;
+                            else
+                                firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                        default:
+                            firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                    }                        
                     //Convert values
-                    ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                    ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary,oldPump);
                 }
                 else
                 {
                     int[] outT = new int[] { outTemps[i] };
                     int[] flowT = new int[] { flowTemp[i] };
-                    GetConvertData(outT, flowT, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertData(outT, flowT, forTemp, climat, newDictionary, oldDictionary,oldPump);
                 }
                
             }

@@ -5,6 +5,7 @@ using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -142,6 +143,7 @@ namespace HovalClassLibrary.Services
         public void GetMaxForlauftemperaturInUnregulatedPump(List<Cell> adressCells, UnregulatedPump pump, IXLWorksheet _sheet, int countTempOut)
         {
             var lastCell = adressCells.FirstOrDefault(x => x.Data == "35");
+            var listWithReadyMaxVor = new List<string>();
             foreach (Cell cell in adressCells.Where(x => Convert.ToInt32(x.Data) > 35))
             {
                 // Номер строки, содержащей данные
@@ -172,18 +174,23 @@ namespace HovalClassLibrary.Services
                     }
                     else
                     {
-                        if (cellDataList.Skip(1).All(item => item == "-"))
+                        if (cellDataList.Skip(1).All(item => item == "-") && !listWithReadyMaxVor.Contains(cellDataList[0]))
                         {
                             foreach (var data in datasPump)
                             {
                                 data.MaxVorlauftemperatur = Convert.ToInt32(lastCell.Data);
                             }
+                            listWithReadyMaxVor.Add(cellDataList[0]);
                         }
                         else
                         {
-                            foreach (var data in datasPump)
+
+                            if (!listWithReadyMaxVor.Contains(cellDataList[0]))
                             {
-                                data.MaxVorlauftemperatur = Convert.ToInt32(cell.Data);
+                                foreach (var data in datasPump)
+                                {
+                                    data.MaxVorlauftemperatur = Convert.ToInt32(cell.Data);
+                                }
                             }
                         }
                     }
@@ -204,13 +211,13 @@ namespace HovalClassLibrary.Services
                 if (standartPumps.Any(x => x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<UnregulatedStandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
-                    UnregulatedGetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    UnregulatedGetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary, typeFile);
 
                 }
                 else
                 {
                     Dictionary<int, List<UnregulatedStandartDataPump>> newDictionary = new Dictionary<int, List<UnregulatedStandartDataPump>>();
-                    UnregulatedGetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    UnregulatedGetConvertDataAndCheckOutTemp(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary, typeFile);
                     var standartPump = new UnregulatedStandartPump()
                     {
                         Name = oldPump.Name,
@@ -225,13 +232,33 @@ namespace HovalClassLibrary.Services
 
         }
         //Get already converted data(get first value where count == 2)
-        private void UnregulatedGetConvertDataAndCheckOutTemp(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<UnregulatedStandartDataPump>> newDictionary, Dictionary<int, List<UnregulatedDataPump>> oldDictionary)
+        private void UnregulatedGetConvertDataAndCheckOutTemp(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<UnregulatedStandartDataPump>> newDictionary, Dictionary<int, List<UnregulatedDataPump>> oldDictionary, string typeFile)
         {
             for (int i = 0; i < outTemps.Length; i++)
             {
                 if (!oldDictionary.Keys.Contains(outTemps[i]))
                 {
-                    var firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                    List<UnregulatedDataPump> firstDataForEachKey = new List<UnregulatedDataPump>();
+                    switch (typeFile)
+                    {
+                        case "Wasser":
+                            oldDictionary.TryGetValue(10, out List<UnregulatedDataPump> dataWasser);
+                            if (dataWasser != null)
+                                firstDataForEachKey = dataWasser;
+                            else
+                                firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                        case "Sole":
+                            oldDictionary.TryGetValue(0, out List<UnregulatedDataPump> dataSole);
+                            if (dataSole != null)
+                                firstDataForEachKey = dataSole;
+                            else
+                                firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                        default:
+                            firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
+                            break;
+                    }
                     //Convert values
                     UnregulatedConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
                 }
