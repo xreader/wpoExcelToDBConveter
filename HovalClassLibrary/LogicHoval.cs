@@ -37,9 +37,9 @@ namespace HovalClassLibrary
                 Console.WriteLine("5. For Wasser unregulated pumps");
                 Console.WriteLine("6. For Luft unregulated pumps");
                 Console.WriteLine("7. Exit!");
-                var typePumpForAlphaInnotec = Console.ReadLine();
+                var typePumpForHoval = Console.ReadLine();
 
-                switch (typePumpForAlphaInnotec)
+                switch (typePumpForHoval)
                 {
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -148,15 +148,8 @@ namespace HovalClassLibrary
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
             _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
             
-            List<StandartPump> a = new List<StandartPump>()
-            {
-                standartPumpsForHoval.ElementAt(3),
-                standartPumpsForHoval.ElementAt(4),
-                standartPumpsForHoval.ElementAt(5),
-                standartPumpsForHoval.ElementAt(6),
-                standartPumpsForHoval.ElementAt(7)
-            };           
-            await ChooseWhatUpdate(a, oldPumpsForHoval, "Luft");
+          
+            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
         }
         private async Task SoleLogic(string excelFilePath)
         {

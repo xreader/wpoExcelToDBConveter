@@ -22,6 +22,7 @@ using TestExel.Services;
 using TestExel.ServicesForDB;
 using TestExel.StandartModels;
 using YorkClassLibrary;
+using RemehaClassLibrary;
 
 class Program
 {
@@ -54,8 +55,8 @@ class Program
                     await hoval.GoalLogicHoval();
                     break;
                 case "4":
-                    //var remeha = new LogicRemeha(dataBasePath);
-                    //await remeha.GoalLogicRemeha();
+                    var remeha = new LogicRemeha(dataBasePath);
+                    await remeha.GoalLogicRemeha();
                     break;
                 default:
                     Console.WriteLine("Error input");
