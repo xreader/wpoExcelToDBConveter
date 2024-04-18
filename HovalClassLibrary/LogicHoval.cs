@@ -124,6 +124,7 @@ namespace HovalClassLibrary
             var _pumpServiceForHoval = new PumpServiceHoval(excelFilePath);
             var standartPumpsForHoval = _pumpServiceForHoval.CreateListStandartPumps();
             var oldPumpsForHoval = _pumpServiceForHoval.GetAllPumpsFromExel();
+           
 
             int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
 
@@ -146,7 +147,16 @@ namespace HovalClassLibrary
             int[] outTempWarmFor55 = { -7, 2, 2, 7, 12 };
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
             _pumpServiceForHoval.GetDataInListStandartPumpsForLuftHoval(standartPumpsForHoval, oldPumpsForHoval, outTempWarmFor55, inTempMidWarm55, 55, "3");
-            await ChooseWhatUpdate(standartPumpsForHoval, oldPumpsForHoval, "Luft");
+            
+            List<StandartPump> a = new List<StandartPump>()
+            {
+                standartPumpsForHoval.ElementAt(3),
+                standartPumpsForHoval.ElementAt(4),
+                standartPumpsForHoval.ElementAt(5),
+                standartPumpsForHoval.ElementAt(6),
+                standartPumpsForHoval.ElementAt(7)
+            };           
+            await ChooseWhatUpdate(a, oldPumpsForHoval, "Luft");
         }
         private async Task SoleLogic(string excelFilePath)
         {

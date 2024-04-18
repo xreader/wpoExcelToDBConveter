@@ -116,7 +116,10 @@ namespace TestExel.ServicesForDB
                                                                 .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55))
                                                                 .OrderBy(pair => pair.Key)
                                                                 .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55).ToList());
+                            if(dataForActuelClimat35Grad.Count != dataForActuelClimat55Grad.Count)
+                            {
 
+                            }
                             await CreateNew14825Data(dataForActuelClimat35Grad, typeClimat, wpId);
                             await CreateNew14825Data(dataForActuelClimat55Grad, typeClimat, wpId);
                             typeClimat++;
@@ -430,15 +433,45 @@ namespace TestExel.ServicesForDB
 
         protected virtual async Task CreateNew14825Data(Dictionary<int, List<StandartDataPump>> dataDictionary, int typeClimat, int wpId)
         {
+            int[] coldClimate = { -22, -20, -15, -7, 2, 7, 12 };
+            int[] midClimate = { -20, -10, -7, 2, 7, 12 };
+            int[] warmClimate = { -7, 2, 2, 7, 12 };
+
+            bool correctOutTemp = typeClimat == 1 && dataDictionary.Count > 6 ? true 
+                                     : typeClimat == 2 && dataDictionary.Count > 5 ? true
+                                     : typeClimat == 3 && dataDictionary.Count > 4 ? true : false;
+            
+            int minKey = dataDictionary.Keys.Min();
             string bigHash = "";
             int forTemp = dataDictionary.Values.First().First().ForTemp;
             foreach (var data in dataDictionary)
             {
+                
                 foreach (var dataValue in data.Value)
                 {
-                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP);
-                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
-                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP);
+                    
+                    bigHash += (dataValue.MinHC == 0 && dataValue.MinCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP);
+                    bigHash += (dataValue.MidHC == 0 && dataValue.MidCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
+                    bigHash += (dataValue.MaxHC == 0 && dataValue.MaxCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP);
+                    if (!correctOutTemp)
+                    {
+                        int correctOutTempCount = typeClimat == 1 ? 6 - dataDictionary.Count
+                                     : typeClimat == 2 ? 5 - dataDictionary.Count
+                                     : typeClimat == 3 ? 4 - dataDictionary.Count : 0;
+                        for(int i = 0; i< correctOutTempCount; i++)
+                        {
+                            var minKeyForAddWhenNotHaveNumber = typeClimat == 1 ? coldClimate.Where(x => x < minKey).DefaultIfEmpty(int.MinValue).Max()
+                                               : typeClimat == 2 ? midClimate.Where(x => x < minKey).DefaultIfEmpty(int.MinValue).Max()
+                                               : typeClimat == 3 ? warmClimate.Where(x => x < minKey).DefaultIfEmpty(int.MinValue).Max() : -20;
+
+                            bigHash += minKeyForAddWhenNotHaveNumber + "#";
+                            bigHash += minKeyForAddWhenNotHaveNumber + "#";
+                            bigHash += minKeyForAddWhenNotHaveNumber + "#";
+                            minKey = minKeyForAddWhenNotHaveNumber;
+                        }
+
+                        correctOutTemp = true;
+                    }
                 }
 
             }
