@@ -139,12 +139,13 @@ namespace TestExel.Services
 
 
                 }
+                
                 if (oldDataWithHighGrad != null && oldDataWithLowGrad != null)
                 {
                     standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, forTemp, climat);
 
                     standartDataPumpChanged = true;
-                }
+                }               
             }
 
 
