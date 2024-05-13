@@ -28,13 +28,13 @@ namespace AlphaInnotecClassLibrary.Services
                 if (standartPumps.Any(x => x.Name == oldPump.Name))
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = standartPumps.FirstOrDefault(x => x.Name == oldPump.Name).Data;
-                    ChooseMethodForConvert(typeFile, outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    ChooseMethodForConvert(typeFile, outTemps, flowTemps, forTemp, climat, newDictionary, oldPump);
 
                 }
                 else
                 {
                     Dictionary<int, List<StandartDataPump>> newDictionary = new Dictionary<int, List<StandartDataPump>>();
-                    ChooseMethodForConvert(typeFile,outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    ChooseMethodForConvert(typeFile,outTemps, flowTemps, forTemp, climat, newDictionary, oldPump);
                     var standartPump = new StandartPump()
                     {
                         Name = oldPump.Name,
@@ -48,44 +48,47 @@ namespace AlphaInnotecClassLibrary.Services
 
 
         }
-        private void ChooseMethodForConvert(string typeFile, int[] outTemps, int[] flowTemps, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void ChooseMethodForConvert(string typeFile, int[] outTemps, int[] flowTemps, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
             switch(typeFile)
             {
                 case "Wasser":
-                    GetConvertDataForWasser(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertDataForWasser(outTemps, flowTemps, forTemp, climat, newDictionary, oldPump);
                     break;
                 case "Luft":
-                    GetConvertDataForLuft(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertDataForLuft(outTemps, flowTemps, forTemp, climat, newDictionary, oldPump);
                     break;
                 case "Sole":
-                    GetConvertDataForSole(outTemps, flowTemps, forTemp, climat, newDictionary, oldDictionary);
+                    GetConvertDataForSole(outTemps, flowTemps, forTemp, climat, newDictionary, oldPump);
                     break;
             }
         }
         //Get already converted data(get first value where count == 2)
-        private void GetConvertDataForWasser(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForWasser(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
+            Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
             for (int i = 0; i < outTemps.Length; i++)
             {
                 var firstDataForEachKey = oldDictionary.Values.Where(x=>x.Count == 2).FirstOrDefault();
                 //Convert values
-                ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary, oldPump);
             }
         }
         //Get already converted data(get first value where count == 2)
-        private void GetConvertDataForSole(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForSole(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
+            Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
             for (int i = 0; i < outTemps.Length; i++)
             {
                 var firstDataForEachKey = oldDictionary.Values.Where(x => x.Count == 2).FirstOrDefault();
                 //Convert values
-                ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                ConvertDataInStandart(firstDataForEachKey, flowTemp[i], outTemps[i], forTemp, climat, newDictionary, oldPump);
             }
         }
         //Get already converted data
-        private void GetConvertDataForLuft(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Dictionary<int, List<DataPump>> oldDictionary)
+        private void GetConvertDataForLuft(int[] outTemps, int[] flowTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
+            Dictionary<int, List<DataPump>> oldDictionary = oldPump.Data;
             for (int i = 0; i < outTemps.Length; i++)
             {
 
@@ -94,7 +97,7 @@ namespace AlphaInnotecClassLibrary.Services
                     //Сode if there is a value for this temperature outside
                     oldDictionary.TryGetValue(outTemps[i], out List<DataPump> oldDataPump);
                     //Convert values
-                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary, oldPump);
 
                 }
                 else
@@ -104,7 +107,7 @@ namespace AlphaInnotecClassLibrary.Services
                     var oldDataPump = oldDictionary.FirstOrDefault(pair => pair.Key > outTemps[i]).Value;// FindDataWhenNoDatainThisOutTemp(oldDictionary, outTemps[i]);
                     
                     //Convert values
-                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary);
+                    ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary, oldPump);
                 }
             }
         }

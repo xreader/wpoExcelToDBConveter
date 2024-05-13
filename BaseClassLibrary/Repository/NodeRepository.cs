@@ -21,6 +21,11 @@ namespace TestExel.Repository
                                                                                   .OrderBy(x=>x.nodeid)
                                                                                   .Select(x=>x.nodeid)
                                                                                   .ToListAsync();
+        public async Task<List<int>> UnregularedGetIdLeavesWithDataByPumpId(int pumpId) => await _context.nodes.Where(x => x.parentid_fk_nodes_nodeid == pumpId && x.typeid_fk_types_typeid == 21)
+                                                                                  .OrderBy(x => x.nodeid)
+                                                                                  .Select(x => x.nodeid)
+                                                                                  .ToListAsync();
+
         //Get leaves id for Leistungsdaten
         public async Task<List<int>> GetIdLeavesWithLeistungsdatenByPumpId(int pumpId) => await _context.nodes.Where(x => x.parentid_fk_nodes_nodeid == pumpId && x.typeid_fk_types_typeid == 8)
                                                                                   .OrderBy(x => x.nodeid)
