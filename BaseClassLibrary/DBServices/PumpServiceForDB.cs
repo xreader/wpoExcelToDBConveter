@@ -3,6 +3,7 @@ using BaseClassLibrary.StandartModels;
 using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,86 +47,56 @@ namespace TestExel.ServicesForDB
                     var leavesIdWithOldDataList = await _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
                     if (leavesIdWithOldDataList.Count > 0)
                     {
-                        var actuelIndexLeaveIdInList = 0;
-                        foreach (var leaveIdWithOldData in leavesIdWithOldDataList)
+                        
+                        foreach (var idLeave in leavesIdWithOldDataList)
                         {
-                            var dataWp = await _leaveRepository.GetLeavesById(leaveIdWithOldData);
-                            var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351).value_as_int;              //Finding the temperature outside
-                            var WPleistVTemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;              //Finding the temperature inside
-                            var RefKlimazone14825 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356).value_as_int;         //Finding the climate type value
-                            var Gui14825Hashcode = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);                       //Find leave with hashcode
-                            if (WPleistATemp != null)
+                            var leaves = await _leaveRepository.GetLeavesById(idLeave);
+                            foreach(var leave in leaves)
                             {
-                                //If there is data with such an outdoor temperature in the model that we received after conversion and standardization
-                                if (pump.Data.TryGetValue((int)WPleistATemp, out var myPumpData))
-                                {
-                                    if (WPleistVTemp != null && RefKlimazone14825 != null)
-                                    {
-                                        //we obtain data from a standardized model with the desired climate and temperature
-                                        var dataPumpForThisData = myPumpData.FirstOrDefault(x => x.ForTemp == WPleistVTemp && x.Climate == RefKlimazone14825.ToString());
-                                        if (dataPumpForThisData != null)
-                                        {
-                                            var WPleistHeiz = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012); //leave with data for P
-                                            var WPleistCOP = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);  //leave with data for COP
-                                            if (WPleistHeiz != null && WPleistCOP != null && Gui14825Hashcode != null)
-                                            { //Changing data for P and COP
-                                                if (WPleistVTemp != gradInseide && RefKlimazone14825 != typeClimat)
-                                                    typeData = 0;
-                                                ChangeDataForSendToDB(ref typeData, WPleistHeiz, WPleistCOP, dataPumpForThisData);
-                                                await _leaveRepository.UpdateLeaves(WPleistHeiz);
-                                                await _leaveRepository.UpdateLeaves(WPleistCOP);
-                                                //form a hash and update
-                                                var str = WPleistATemp + "#" + WPleistHeiz.value_as_int + "#" + WPleistCOP.value_as_int;
-                                                int hash = GetHashCode(str);
-                                                Gui14825Hashcode.value = hash.ToString();
-                                                await _leaveRepository.UpdateLeaves(Gui14825Hashcode);
-                                            }
-                                        }
-                                        else
-                                            Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
-                                    }
-                                }
-                                else
-                                    Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
-                                //Create a long hash and send it when filled
-                                if (WPleistVTemp == gradInseide && RefKlimazone14825 == typeClimat && leavesIdWithOldDataList.Count - 1 != actuelIndexLeaveIdInList)
-                                    bigHash += Gui14825Hashcode.value + "#";
-                                else
-                                {
-                                    var changeValue = await UpdateBigHash(leavesIdWithOldDataList.Count, actuelIndexLeaveIdInList, wpId, gradInseide, typeClimat, Gui14825Hashcode.value, bigHash, (int)WPleistVTemp, (int)RefKlimazone14825);
-                                    gradInseide = changeValue.Item1;
-                                    typeClimat = changeValue.Item2;
-                                    bigHash = changeValue.Item3;
-                                }
-
+                                await _leaveRepository.DeleteLeave(leave);
                             }
-                            actuelIndexLeaveIdInList++;
+                            var node = await _nodeRepository.GetNodeByIdAsync(idLeave);
+                            await _nodeRepository.DeleteNode(node);
                         }
 
+                        var leavesWithBigHash = new List<Leave>
+                        {
+                            await _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId),
+                            await _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId),
+                            await _leaveRepository.GetBigHashFor35GradForMittelKlimaByWpId(wpId),
+                            await _leaveRepository.GetBigHashFor55GradForMittelKlimaByWpId(wpId),
+                            await _leaveRepository.GetBigHashFor35GradForWarmKlimaByWpId(wpId),
+                            await _leaveRepository.GetBigHashFor55GradForWarmKlimaByWpId(wpId)
+                        };
+
+                        foreach (var leaveWithBigHash in leavesWithBigHash)
+                        {
+                            if (leaveWithBigHash != null)
+                            {
+                                await _leaveRepository.DeleteLeave(leaveWithBigHash);
+                            }
+                        }
                     }
-                    else
+                    while (typeClimat <= numClimat)
                     {
-                        while (typeClimat <= numClimat)
+                        var dataForActuelClimat35Grad = pump.Data
+                                                            .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35))
+                                                            .OrderBy(pair => pair.Key)
+                                                            .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35).ToList());
+
+                        var dataForActuelClimat55Grad = pump.Data
+                                                            .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55))
+                                                            .OrderBy(pair => pair.Key)
+                                                            .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55).ToList());
+                        if (dataForActuelClimat35Grad.Count != dataForActuelClimat55Grad.Count)
                         {
-                            var dataForActuelClimat35Grad = pump.Data
-                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35))
-                                                                .OrderBy(pair => pair.Key)
-                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35).ToList());
 
-                            var dataForActuelClimat55Grad = pump.Data
-                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55))
-                                                                .OrderBy(pair => pair.Key)
-                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55).ToList());
-                            if(dataForActuelClimat35Grad.Count != dataForActuelClimat55Grad.Count)
-                            {
-
-                            }
-                            await CreateNew14825Data(dataForActuelClimat35Grad, typeClimat, wpId);
-                            await CreateNew14825Data(dataForActuelClimat55Grad, typeClimat, wpId);
-                            typeClimat++;
                         }
-                        typeClimat = 1;
+                        await CreateNew14825Data(dataForActuelClimat35Grad, typeClimat, wpId);
+                        await CreateNew14825Data(dataForActuelClimat55Grad, typeClimat, wpId);
+                        typeClimat++;
                     }
+                    typeClimat = 1;
                     Console.WriteLine("Pump -" + wp.value + "  Update!");
                     Console.WriteLine();
                     Console.WriteLine();
@@ -227,59 +198,35 @@ namespace TestExel.ServicesForDB
                                                                                                                          //Get all leave in db for this WP                
                 var listWithleavesWithListOldLeistungdaten = await _leaveRepository.GetLeavesByIdList(leavesIdWithOldLeistungdatenList);
 
-                //We sort through the data we received from Excel
+                //We sort through the data we received from Excel q
                 foreach (var newDataDictionary in pump.Data)
                 {
                     foreach (var newData in newDataDictionary.Value)
                     {
                         //We are looking for a list of records where there is data that needs to be changed and their quantity, if the number is more than 1, then we change the first one and delete the rest
-                        var listWithLeavesForUpdate = listWithleavesWithListOldLeistungdaten
+                        var listWithLeistungDaten = listWithleavesWithListOldLeistungdaten
                                      .Where(list => list.Any(leave => leave.value_as_int == newDataDictionary.Key && leave.objectid_fk_properties_objectid == 1010))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.Temp && leave.objectid_fk_properties_objectid == 1011))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.MaxVorlauftemperatur && leave.objectid_fk_properties_objectid == 1015))
                                      .ToList();
                         //If there are such records, we simply update them and delete duplicates
-                        if (listWithLeavesForUpdate.Count > 0)
+                        if (listWithLeistungDaten.Count > 0)
                         {
-                            //We take the first entry for updating; subsequent repeated ones must be deleted! and must be removed both from the database and from the list
-                            var leavesForUpdate = listWithLeavesForUpdate[0];
-                            //Finding the Heizleistung - P and Update
-                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);
-                            WPleistHeiz.value_as_int = newData.MaxHC == 0 ? 0 : (int)(newData.MaxHC * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistHeiz);
-                            //Finding the COP and Update
-                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);
-                            WPleistCOP.value_as_int = newData.MaxCOP == 0 ? 0 : (int)(newData.MaxCOP * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistCOP);
-                            //Finding the Leistungsaufnahme and Update
-                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);
-                            WPleistAuf.value_as_int = newData.MaxCOP == 0 || newData.MaxHC == 0 ? 0 : (int)(newData.MaxHC / newData.MaxCOP * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistAuf);
-                            //Finding the Kealteleistung and Update
-                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);
-                            WPleistKaelte.value_as_int = newData.MaxCOP == 0 || newData.MaxHC == 0 ? 0 : (int)((newData.MaxHC - 0.96 * (newData.MaxHC / newData.MaxCOP)) * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistKaelte);
+                           foreach(var leavesForDelete in listWithLeistungDaten)
+                           {
+                                foreach(var leaveForDelete in leavesForDelete)
+                                    await _leaveRepository.DeleteLeave(leaveForDelete);
+                           }
 
-
-                            //We remove from the list with our data what we updated
-                            listWithLeavesForUpdate.Remove(leavesForUpdate);
-                            //Now the list contains only duplicate entries that should be removed from the database
-                            await _leaveRepository.DeleteLeaves(listWithLeavesForUpdate);
-
-                            //We remove from the list with all entries for this pump those entries that have just been updated 
-                            listWithleavesWithListOldLeistungdaten.Remove(leavesForUpdate);
-
-                            //We remove from the list with all the records for this pump those records that were deleted from the database, and also delete the connecting records from the database, that is, Node
-                            foreach (var item in listWithLeavesForUpdate)
-                            {
-                                listWithleavesWithListOldLeistungdaten.Remove(item);
-                                var node = await _nodeRepository.GetNodeByIdAsync(item[0].nodeid_fk_nodes_nodeid);
-                                await _nodeRepository.DeleteNode(node);
-                            }
+                           foreach(var idNodeForDelete in leavesIdWithOldLeistungdatenList)
+                           {
+                                var nodeForDelete = await _nodeRepository.GetNodeByIdAsync(idNodeForDelete);
+                                if (nodeForDelete != null)
+                                    await _nodeRepository.DeleteNode(nodeForDelete);
+                           }
 
                         }
-                        //If there are no records with this temperature inside and the maximum temperature inside (you need to create a record)
-                        else
+                        if(newData.MaxCOP > 0 && newData.MaxHC > 0)
                         {
                             //Create a linking record
                             Node node = new Node() { typeid_fk_types_typeid = 8, parentid_fk_nodes_nodeid = wpId, licence = 0 };
@@ -300,8 +247,8 @@ namespace TestExel.ServicesForDB
                             {
                                 await _leaveRepository.CreateLeave(leave);
                             }
-
                         }
+                        
                     }
 
 

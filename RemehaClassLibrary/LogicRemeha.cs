@@ -38,8 +38,8 @@ namespace RemehaClassLibrary
                 {
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        Console.WriteLine("Write full path to Excel File for Hoval (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\RemehaLuft.xlsx";//Console.ReadLine();
+                        Console.WriteLine("Write full path to Excel File for Hoval (Luft):");
+                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\Remeha UpdateData.xlsx";//Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
                         break;
@@ -81,31 +81,31 @@ namespace RemehaClassLibrary
             int[] inTempMidWarm55 = { 55, 55, 55, 46, 34 };
             _pumpServiceForRemeha.GetDataInListStandartPumpsForLuftRemeha(standartPumpsForRemeha, oldPumpsForRemeha, outTempWarmFor55, inTempMidWarm55, 55, "3");
 
-            foreach (var pump in standartPumpsForRemeha)
-            {
-                Console.WriteLine(pump.Name);
+            //foreach (var pump in standartPumpsForRemeha)
+            //{
+            //    Console.WriteLine(pump.Name);
 
-                foreach (var kvp in pump.Data)
-                {
-                    Console.WriteLine($"Key: {kvp.Key}");
+            //    foreach (var kvp in pump.Data)
+            //    {
+            //        Console.WriteLine($"Key: {kvp.Key}");
 
-                    foreach (var dataPump in kvp.Value)
-                    {
-                        Console.WriteLine($"Temp: {dataPump.ForTemp}");
-                        Console.WriteLine($"FlowTemp: {dataPump.FlowTemp}");
-                        Console.WriteLine($"Climate: {dataPump.Climate}");
-                        Console.WriteLine($"MaxVorlauftemperatur: {dataPump.MaxVorlauftemperatur}");
-                        Console.WriteLine($"MinHC: {dataPump.MinHC}");
-                        Console.WriteLine($"MidHC: {dataPump.MidHC}");
-                        Console.WriteLine($"MaxHC: {dataPump.MaxHC}");
-                        Console.WriteLine($"MinCOP: {dataPump.MinCOP}");
-                        Console.WriteLine($"MidCOP: {dataPump.MidCOP}");
-                        Console.WriteLine($"MaxCOP: {dataPump.MaxCOP}");
+            //        foreach (var dataPump in kvp.Value)
+            //        {
+            //            Console.WriteLine($"Temp: {dataPump.ForTemp}");
+            //            Console.WriteLine($"FlowTemp: {dataPump.FlowTemp}");
+            //            Console.WriteLine($"Climate: {dataPump.Climate}");
+            //            Console.WriteLine($"MaxVorlauftemperatur: {dataPump.MaxVorlauftemperatur}");
+            //            Console.WriteLine($"MinHC: {dataPump.MinHC}");
+            //            Console.WriteLine($"MidHC: {dataPump.MidHC}");
+            //            Console.WriteLine($"MaxHC: {dataPump.MaxHC}");
+            //            Console.WriteLine($"MinCOP: {dataPump.MinCOP}");
+            //            Console.WriteLine($"MidCOP: {dataPump.MidCOP}");
+            //            Console.WriteLine($"MaxCOP: {dataPump.MaxCOP}");
 
-                        Console.WriteLine();
-                    }
-                }
-            }
+            //            Console.WriteLine();
+            //        }
+            //    }
+            //}
             await ChooseWhatUpdate(standartPumpsForRemeha, oldPumpsForRemeha, "Luft");
         }
         private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)

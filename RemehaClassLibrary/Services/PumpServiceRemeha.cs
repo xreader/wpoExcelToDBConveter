@@ -97,7 +97,7 @@ namespace RemehaClassLibrary.Services
                 var cellDataListMin = GetDataInRow(_sheet, rowNumber, startColumnIndex);
                 var cellDataListMid = GetDataInRow(_sheet, rowNumber+1, startColumnIndex);
                 var cellDataListMax = GetDataInRow(_sheet, rowNumber+2, startColumnIndex);
-                if (!cellDataListMin.Skip(2).Take(2).All(item => item == "/") && !cellDataListMid.Skip(2).Take(2).All(item => item == "/") && !cellDataListMax.Skip(2).Take(2).All(item => item == "/"))
+                if (!cellDataListMin.Skip(2).Take(2).All(item => item == "/") || !cellDataListMid.Skip(2).Take(2).All(item => item == "/") || !cellDataListMax.Skip(2).Take(2).All(item => item == "/"))
                 {
                     pump.Data.TryGetValue(Convert.ToInt32(cellDataListMin[0]), out var datasPump);
                     if (datasPump == null)
