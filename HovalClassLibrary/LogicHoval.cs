@@ -44,7 +44,7 @@ namespace HovalClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Hoval (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx"
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
@@ -52,26 +52,26 @@ namespace HovalClassLibrary
                     case "2":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Hoval (Sole):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\SoleAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSole.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSole.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await SoleLogic(excelFilePath);
                         break;
                     case "3":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Hoval (Wasser):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasser.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasser.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await WasserLogic(excelFilePath);
                         break;
                     case "4":
                         Console.WriteLine("Write full path to Excel File for Hoval (Sole unregulated pumps):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSoleNicht_verstellbar.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalSoleNicht_verstellbar.xlsx";
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await SoleLogicUnregulatedPumps(excelFilePath);
                         break;
                     case "5":
                         Console.WriteLine("Write full path to Excel File for Hoval (Wasser unregulated pumps):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\WasserAlphaInnotec.xlsx"
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasserNicht_verstellbar.xlsx";//Console.ReadLine();
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalWasserNicht_verstellbar.xlsx";
                         await WasserLogicUnregulatedPumps(excelFilePath);
                         break;
                     case "6":
