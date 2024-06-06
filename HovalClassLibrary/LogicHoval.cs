@@ -44,7 +44,7 @@ namespace HovalClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Hoval (Luft):");//"D:\\Work\\wpoExcelToDBConveter\\TestExel\\LuftAlphaInnotec.xlsx"
-                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalLuft.xlsx"
+                        excelFilePath = Console.ReadLine(); //"D:\\Work\\wpoExcelToDBConveter\\TestExel\\HovalUpdateSomePump.xlsx"; //
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
