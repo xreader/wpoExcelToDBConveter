@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +57,11 @@ namespace TestExel.Repository
                 }
 
             }            
+            return await SaveAsync();
+        }
+        public async Task<bool> DeleteLeave(Leave leave)
+        {
+            _context.Remove(leave);
             return await SaveAsync();
         }
         public async Task<bool> UpdateLeaves(Leave leaves)

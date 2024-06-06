@@ -15,21 +15,15 @@ namespace YorkClassLibrary.DBService
 {
     public class PumpServiceForDBYork : PumpServiceForDB
     {
-        private readonly LeaveRepository _leaveRepository;
-        private readonly NodeRepository _nodeRepository;
-        private readonly TextRepository _textRepository;
-        public PumpServiceForDBYork(string pathDB)
+        public PumpServiceForDBYork(string pathDB) : base(pathDB)
         {
-            var options = new DbContextOptionsBuilder<ApplicationDBContext>()
-               .UseSqlite("Data Source=" + pathDB + ";")
-               .Options;
-            _leaveRepository = new LeaveRepository(new ApplicationDBContext(options));
-            _nodeRepository = new NodeRepository(new ApplicationDBContext(options));
-            _textRepository = new TextRepository(new ApplicationDBContext(options));
+            
         }
-        public async Task ChangeLeistungsdatenInDbByExcelData(Pump pump)
+
+        //Method for adding Leistungdaten to the database (Especially for York, it is made so that not Max Data is taken, but Min Data)
+        public override async Task ChangeLeistungsdatenInDbByExcelData(Pump pump, string typePump, int idCompany)
         {
-            var wpList = await GetWPListForYork(pump.Name);
+            var wpList = await GetWPList(pump.Name, typePump, idCompany);
             foreach (var wp in wpList)
             {
                 var wpId = wp.nodeid_fk_nodes_nodeid;
@@ -56,19 +50,19 @@ namespace YorkClassLibrary.DBService
                             var leavesForUpdate = listWithLeavesForUpdate[0];
                             //Finding the Heizleistung - P and Update
                             var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);
-                            WPleistHeiz.value_as_int = (int)(newData.MidHC * 100);
+                            WPleistHeiz.value_as_int = newData.MidHC == 0 ? 0 : (int)(newData.MidHC * 100);
                             await _leaveRepository.UpdateLeaves(WPleistHeiz);
                             //Finding the COP and Update
                             var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);
-                            WPleistCOP.value_as_int = (int)(newData.MidCOP * 100);
+                            WPleistCOP.value_as_int = newData.MidCOP == 0 ? 0 : (int)(newData.MidCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistCOP);
                             //Finding the Leistungsaufnahme and Update
                             var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);
-                            WPleistAuf.value_as_int = (int)(newData.MidHC / newData.MidCOP * 100);
+                            WPleistAuf.value_as_int = newData.MidCOP == 0 || newData.MidHC == 0 ? 0 : (int)(newData.MidHC / newData.MidCOP * 100);
                             await _leaveRepository.UpdateLeaves(WPleistAuf);
                             //Finding the Kealteleistung and Update
                             var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);
-                            WPleistKaelte.value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100);
+                            WPleistKaelte.value_as_int = newData.MidCOP == 0 || newData.MidHC == 0 ? 0 : (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100);
                             await _leaveRepository.UpdateLeaves(WPleistKaelte);
 
 
@@ -100,11 +94,11 @@ namespace YorkClassLibrary.DBService
                             {
                                 new Leave() { objectid_fk_properties_objectid = 1010, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newDataDictionary.Key },
                                 new Leave() { objectid_fk_properties_objectid = 1011, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.Temp },
-                                new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100) },
-                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidHC / newData.MidCOP * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1012, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MidHC == 0 ? 0 :(int)(newData.MidHC * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1013, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MidCOP == 0 || newData.MidHC == 0 ? 0 : (int)((newData.MidHC - 0.96 * (newData.MidHC / newData.MidCOP)) * 100) },
+                                new Leave() { objectid_fk_properties_objectid = 1014, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MidCOP == 0 || newData.MidHC == 0 ? 0 :(int)(newData.MidHC / newData.MidCOP * 100) },
                                 new Leave() { objectid_fk_properties_objectid = 1015, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MaxVorlauftemperatur },
-                                new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = (int)(newData.MidCOP * 100) }
+                                new Leave() { objectid_fk_properties_objectid = 1221, nodeid_fk_nodes_nodeid = node.nodeid, value = "", value_as_int = newData.MidCOP == 0 ? 0 : (int)(newData.MidCOP * 100) }
                             };
                             //Add them to the database
                             foreach (var leave in leaves)
@@ -133,159 +127,82 @@ namespace YorkClassLibrary.DBService
             }
         }
 
-        //Update in DB this data  EN 14825 LG
-        public async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump)
+        //Method for changing data in the model before sending it to the database (Especially for York it was made so that Max Data == Min Data)
+        protected override void ChangeDataForSendToDB(ref int typeData, Leave WPleistHeiz, Leave WPleistCOP, StandartDataPump dataPumpForThisData)
         {
-            var wpList = await GetWPListForYork(pump.Name);
-            foreach (var wp in wpList)
+            switch (typeData)
             {
-                var typeData = 0;
-                if (wp != null)
-                {
-                    int typeClimat = 1;
-                    int gradInseide = 35;
-                    string bigHash = "";
-                    var wpId = wp.nodeid_fk_nodes_nodeid;
-                    var leavesIdWithOldDataList = await _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
-                    if(leavesIdWithOldDataList.Count > 0)
-                    {
-                        var actuelIndexLeaveIdInList = 0;
-                        foreach (var leaveIdWithOldData in leavesIdWithOldDataList)
-                        {
-                            var dataWp = await _leaveRepository.GetLeavesById(leaveIdWithOldData);
-                            var WPleistATemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1351).value_as_int;              //Finding the temperature outside
-                            var WPleistVTemp = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1011).value_as_int;              //Finding the temperature inside
-                            var RefKlimazone14825 = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1356).value_as_int;         //Finding the climate type value
-                            var Gui14825Hashcode = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1368);                       //Find leave with hashcode
-                            if (WPleistATemp != null)
-                            {
-                                //If there is data with such an outdoor temperature in the model that we received after conversion and standardization
-                                if (pump.Data.TryGetValue((int)WPleistATemp, out var myPumpData))
-                                {
-                                    if (WPleistVTemp != null && RefKlimazone14825 != null)
-                                    {
-                                        //we obtain data from a standardized model with the desired climate and temperature
-                                        var dataPumpForThisData = myPumpData.FirstOrDefault(x => x.ForTemp == WPleistVTemp && x.Climate == RefKlimazone14825.ToString());
-                                        if (dataPumpForThisData != null)
-                                        {
-                                            var WPleistHeiz = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012); //leave with data for P
-                                            var WPleistCOP = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);  //leave with data for COP
-                                            if (WPleistHeiz != null && WPleistCOP != null && Gui14825Hashcode != null)
-                                            { //Changing data for P and COP
-                                                if (WPleistVTemp != gradInseide && RefKlimazone14825 != typeClimat)
-                                                    typeData = 0;
-                                                ChangeDataForSendToDB(ref typeData, WPleistHeiz, WPleistCOP, dataPumpForThisData);
-                                                _leaveRepository.UpdateLeaves(WPleistHeiz);
-                                                _leaveRepository.UpdateLeaves(WPleistCOP);
-                                                //form a hash and update
-                                                var str = WPleistATemp + "#" + WPleistHeiz.value_as_int + "#" + WPleistCOP.value_as_int;
-                                                int hash = GetHashCode(str);
-                                                Gui14825Hashcode.value = hash.ToString();
-                                                _leaveRepository.UpdateLeaves(Gui14825Hashcode);
-                                            }
-                                        }
-                                        else
-                                            Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
-                                    }
-                                }
-                                else
-                                    Console.WriteLine("Data for " + WPleistVTemp + " And " + RefKlimazone14825 + " for pump " + pump.Name + " DONT UPDATE, BECOUSE DONT HAVE DATA!");
-                                //Create a long hash and send it when filled
-                                if (WPleistVTemp == gradInseide && RefKlimazone14825 == typeClimat && leavesIdWithOldDataList.Count - 1 != actuelIndexLeaveIdInList)
-                                    bigHash += Gui14825Hashcode.value + "#";
-                                else
-                                {
-                                    var changeValue = await UpdateBigHash(leavesIdWithOldDataList.Count, actuelIndexLeaveIdInList, wpId, gradInseide, typeClimat, Gui14825Hashcode.value, bigHash, (int)WPleistVTemp, (int)RefKlimazone14825);
-                                    gradInseide = changeValue.Item1;
-                                    typeClimat = changeValue.Item2;
-                                    bigHash = changeValue.Item3;
-                                }
-
-                            }
-                            actuelIndexLeaveIdInList++;
-                        }
-                    }
-                    else
-                    {
-                        while (typeClimat <= 2)
-                        {
-                            var dataForActuelClimat35Grad = pump.Data
-                                                                .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35))
-                                                                .OrderBy(pair => pair.Key)
-                                                                .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 35).ToList());
-
-                            var dataForActuelClimat55Grad = pump.Data
-                                                                    .Where(pair => pair.Value.Any(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55))
-                                                                    .OrderBy(pair => pair.Key) 
-                                                                    .ToDictionary(pair => pair.Key, pair => pair.Value.Where(data => data.Climate == typeClimat.ToString() && data.ForTemp == 55).ToList());
-
-                            await CreateNew14825Data(dataForActuelClimat35Grad, typeClimat, wpId);
-                            await CreateNew14825Data(dataForActuelClimat55Grad, typeClimat, wpId);
-                            typeClimat++;
-                        }
-                        typeClimat = 1;
-                    }
-                    
-
-                    Console.WriteLine("Pump -" + wp.value + "  Update!");
-                    Console.WriteLine();
-                    Console.WriteLine();
-                    Task.Delay(1000).Wait();
-                }
+                case 0:
+                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MinHC * 100);
+                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MinCOP * 100);
+                    typeData++;
+                    break;
+                case 1:
+                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MidHC * 100);
+                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MidCOP * 100);
+                    typeData++;
+                    break;
+                case 2:
+                    WPleistHeiz.value_as_int = (int)(dataPumpForThisData.MidHC * 100);
+                    WPleistCOP.value_as_int = (int)(dataPumpForThisData.MidCOP * 100);
+                    typeData = 0;
+                    break;
+                default:
+                    break;
             }
         }
-        private async Task<Leave> CreateNewYorkPump(string namePump)
+        //Method for creating 14825 data (Especially for York it was made so that Max Data == Min Data)
+        protected override async Task CreateNew14825Data(Dictionary<int, List<StandartDataPump>> dataDictionary, int typeClimat, int wpId)
         {
-            var node = new Node()
+            string bigHash = "";
+            int forTemp = dataDictionary.Values.First().First().ForTemp;
+            foreach (var data in dataDictionary)
             {
-                typeid_fk_types_typeid = 6,
-                parentid_fk_nodes_nodeid = 135287,
-                licence = 0
-            };
-            await _nodeRepository.CreateNode(node);
-            var wpId = node.nodeid;
-
-            var leavesList = new List<Leave>()
-            {
-                new Leave(){ objectid_fk_properties_objectid = 1006, nodeid_fk_nodes_nodeid = wpId, value = namePump, value_as_int = 0},
-                new Leave(){ objectid_fk_properties_objectid = 1001, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 2},
-                new Leave(){ objectid_fk_properties_objectid = 1002, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
-                new Leave(){ objectid_fk_properties_objectid = 1007, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
-                new Leave(){ objectid_fk_properties_objectid = 1019, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
-                new Leave(){ objectid_fk_properties_objectid = 1023, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 50},
-                new Leave(){ objectid_fk_properties_objectid = 1031, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
-                new Leave(){ objectid_fk_properties_objectid = 1245, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 1},
-                new Leave(){ objectid_fk_properties_objectid = 1258, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
-                new Leave(){ objectid_fk_properties_objectid = 1542, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
-                new Leave(){ objectid_fk_properties_objectid = 1543, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 0},
-                new Leave(){ objectid_fk_properties_objectid = 1699, nodeid_fk_nodes_nodeid = wpId, value = "", value_as_int = 65}
-            };
-            foreach (var item in leavesList)
-            {
-                await _leaveRepository.CreateLeave(item);
-            }
-            return leavesList[0];
-        }
-        private async Task<List<Leave>> GetWPListForYork(string pumpName)
-        {
-            List<Leave> wpList = new List<Leave>();
-            var textForWpList = await _textRepository.FindTextIdByGerName(pumpName);
-            if (textForWpList.Count > 0)
-            {
-                foreach (var textForWp in textForWpList)
+                foreach (var dataValue in data.Value)
                 {
-                    wpList.Add(await _leaveRepository.FindLeaveByTextId(textForWp.textid));
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP);
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
+                    bigHash += await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
                 }
+
             }
-            else
+            switch (typeClimat)
             {
-                wpList = await _leaveRepository.FindLeaveByNamePump(pumpName);
+                case 1:
+                    var neuLeaveCold = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1464 : 1466,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveCold);
+                    break;
+                case 2:
+                    var neuLeaveMid = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1364 : 1366,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveMid);
+
+                    break;
+                case 3:
+                    var neuLeaveWarm = new Leave()
+                    {
+                        objectid_fk_properties_objectid = forTemp == 35 ? 1468 : 1470,
+                        nodeid_fk_nodes_nodeid = wpId,
+                        value = bigHash,
+                        value_as_int = 0
+                    };
+                    await _leaveRepository.CreateLeave(neuLeaveWarm);
+
+                    break;
+
             }
-            if (wpList.Count == 0)
-            {
-                wpList.Add(await CreateNewYorkPump(pumpName));
-            }
-            return wpList;
+
         }
     }
 }
