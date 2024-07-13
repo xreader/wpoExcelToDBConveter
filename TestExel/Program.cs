@@ -1,28 +1,9 @@
-﻿
-using AlphaInnotecClassLibrary;
-using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Drawing;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.Spreadsheet;
+﻿using AlphaInnotecClassLibrary;
 using HovalClassLibrary;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Diagnostics;
-using System.IO;
-using System.Security.Policy;
-using TestExel;
-using TestExel.DBConnection;
-using TestExel.DBModels;
-using TestExel.Models;
-using TestExel.Services;
-using TestExel.ServicesForDB;
-using TestExel.StandartModels;
 using YorkClassLibrary;
 using RemehaClassLibrary;
+using EcoforestClassLibrary;
+using System.Text.RegularExpressions;
 
 class Program
 {
@@ -30,6 +11,8 @@ class Program
     { 
         //Console.WriteLine("Write full path to Data Base:");
         string dataBasePath = "E:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";//Console.ReadLine(); //
+
+       
 
         while (true)
         {
@@ -39,6 +22,7 @@ class Program
             Console.WriteLine("2. Alpha Innotec");
             Console.WriteLine("3. Hoval");
             Console.WriteLine("4. Remeha");
+            Console.WriteLine("5. Ecofortest");
             var company = Console.ReadLine();
             switch (company)
             {
@@ -58,12 +42,17 @@ class Program
                     var remeha = new LogicRemeha(dataBasePath);
                     await remeha.GoalLogicRemeha();
                     break;
+                case "5":
+                    var ecoforest = new LogicEcoforest(dataBasePath);
+                    await ecoforest.GoalLogicEcoforest();
+                    break;
                 default:
                     Console.WriteLine("Error input");
                     break;
             }
         }
     }
+    
 }
     
 

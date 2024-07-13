@@ -1,6 +1,7 @@
 ﻿using BaseClassLibrary.Models;
 using BaseClassLibrary.StandartModels;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,8 +54,7 @@ namespace TestExel.Services
                 midHC = Math.Round(oldDataWithHighGrad.MidHC - dif * (oldDataWithHighGrad.MidHC - oldDataWithLowGrad.MidHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
             if (oldDataWithHighGrad.MaxHC != 0 && oldDataWithLowGrad.MaxHC != 0)
                 maxHC = Math.Round(oldDataWithHighGrad.MaxHC - dif * (oldDataWithHighGrad.MaxHC - oldDataWithLowGrad.MaxHC) / (oldDataWithHighGrad.Temp - oldDataWithLowGrad.Temp), 2);
-
-            return new StandartDataPump
+            var standartDataPump = new StandartDataPump
             {
                 ForTemp = forTemp,
                 FlowTemp = flowTemp,
@@ -62,37 +62,74 @@ namespace TestExel.Services
                 MinHC = minHC,
                 MidHC = midHC,
                 MaxHC = maxHC,
-                MinCOP = minCop == 0 ? 0 : minCop == 0 ? 0 : minCop < 1 ? 1 : minCop,
-                MidCOP = midCop == 0 ? 0 : midCop == 0 ? 0 : midCop < 1 ? 1 : midCop,
-                MaxCOP = maxCop == 0 ? 0 : maxCop == 0 ? 0 : maxCop < 1 ? 1 : maxCop,
+                MinCOP = minCop == 0 ? 0 : minCop < 1 ? 1 : minCop,
+                MidCOP = midCop == 0 ? 0 : midCop < 1 ? 1 : midCop,
+                MaxCOP = maxCop == 0 ? 0 : maxCop < 1 ? 1 : maxCop,
                 MaxVorlauftemperatur = oldDataWithLowGrad.MaxVorlauftemperatur
             };
+            
+            return standartDataPump;
+
         }
-        //Calculates data for the pump when we do not have data at this temperature outside
         protected List<DataPump> FindDataWhenNoDatainThisOutTemp(Dictionary<int, List<DataPump>> oldDictionary, int outTemp)
         {
-            var maxKeyBeforeTarget = oldDictionary.Keys.Where(key => key < outTemp).DefaultIfEmpty(int.MinValue).Max();
-            var minKeyBeforeTarget = oldDictionary.Keys.Where(key => key > outTemp).DefaultIfEmpty(int.MaxValue).Min();
+            // Определение ближайших ключей
+            var lowerTemp = oldDictionary.Keys.Where(key => key < outTemp).DefaultIfEmpty(int.MinValue).Max();
+            var highTemp = oldDictionary.Keys.Where(key => key > outTemp).DefaultIfEmpty(int.MaxValue).Min();
 
-            if (!oldDictionary.TryGetValue(maxKeyBeforeTarget, out var minDataPump) ||
-                !oldDictionary.TryGetValue(minKeyBeforeTarget, out var maxDataPump))
+            // Проверка наличия ключей
+            if (lowerTemp == int.MinValue || highTemp == int.MaxValue || lowerTemp == highTemp)
+            {
+                // Выбор первых двух ключей
+                if (oldDictionary.Count < 2)
+                {
+                    // Если меньше двух элементов в словаре, невозможно интерполировать
+                    return new List<DataPump>();
+                }
+
+                highTemp = lowerTemp;
+                lowerTemp = oldDictionary.Keys.Where(key => key < highTemp).DefaultIfEmpty(int.MinValue).Max();
+            }
+
+            // Извлечение данных для найденных ключей
+            if (!oldDictionary.TryGetValue(lowerTemp, out var minDataPump) ||
+                !oldDictionary.TryGetValue(highTemp, out var maxDataPump))
             {
                 return new List<DataPump>();
             }
-            //Calculation of data for the pump, provided that there was no such temperature outside
-            var oldDataPump = minDataPump.Zip(maxDataPump, (minElement, maxElement) => new DataPump
-            {
-                Temp = minElement.Temp,
-                MinHC = Math.Round(minElement.MinHC + (outTemp - maxKeyBeforeTarget) * (maxElement.MinHC - minElement.MinHC) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2),
-                MidHC = Math.Round(minElement.MidHC + (outTemp - maxKeyBeforeTarget) * (maxElement.MidHC - minElement.MidHC) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2),
-                MaxHC = Math.Round(minElement.MaxHC + (outTemp - maxKeyBeforeTarget) * (maxElement.MaxHC - minElement.MaxHC) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2),
-                MinCOP = Math.Round(minElement.MinCOP + (outTemp - maxKeyBeforeTarget) * (maxElement.MinCOP - minElement.MinCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2),
-                MidCOP = Math.Round(minElement.MidCOP + (outTemp - maxKeyBeforeTarget) * (maxElement.MidCOP - minElement.MidCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2),
-                MaxCOP = Math.Round(minElement.MaxCOP + (outTemp - maxKeyBeforeTarget) * (maxElement.MaxCOP - minElement.MaxCOP) / (maxKeyBeforeTarget - minKeyBeforeTarget), 2)
-            }).ToList();
 
-            return oldDataPump;
-        }        
+            // Интерполяция данных
+            var interpolatedData = new List<DataPump>();
+
+            for (int i = 0; i < Math.Min(minDataPump.Count, maxDataPump.Count); i++)
+            {
+                var minElement = minDataPump[i];
+                var maxElement = maxDataPump[i];
+
+                var newDataPump = new DataPump
+                {
+                    Temp = maxElement.Temp,
+                    MaxVorlauftemperatur = maxElement.MaxVorlauftemperatur,
+                    MinHC = Interpolate(minElement.MinHC, maxElement.MinHC, lowerTemp, highTemp, outTemp),
+                    MidHC = Interpolate(minElement.MidHC, maxElement.MidHC, lowerTemp, highTemp, outTemp),
+                    MaxHC = Interpolate(minElement.MaxHC, maxElement.MaxHC, lowerTemp, highTemp, outTemp),
+                    MinCOP = Interpolate(minElement.MinCOP, maxElement.MinCOP, lowerTemp, highTemp, outTemp),
+                    MidCOP = Interpolate(minElement.MidCOP, maxElement.MidCOP, lowerTemp, highTemp, outTemp),
+                    MaxCOP = Interpolate(minElement.MaxCOP, maxElement.MaxCOP, lowerTemp, highTemp, outTemp)
+                };
+
+                interpolatedData.Add(newDataPump);
+            }
+
+            return interpolatedData;
+        }
+
+        // Метод для линейной интерполяции
+        private double Interpolate(double minValue, double maxValue, int minTemp, int maxTemp, int targetTemp)
+        {
+            var result = Math.Round(minValue + (targetTemp - minTemp) * (maxValue - minValue) / (maxTemp - minTemp), 2);
+            return result < 0 ? 0 : result;
+        }
         //Convert the data
         protected void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
@@ -130,7 +167,7 @@ namespace TestExel.Services
                             MidCOP = oldDataWithLowTempOut.MidCOP + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MidCOP - oldDataWithLowTempOut.MidCOP) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
                             MaxCOP = oldDataWithLowTempOut.MaxCOP + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MaxCOP - oldDataWithLowTempOut.MaxCOP) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut))
                         };
-                    
+                        
                         
 
 
@@ -148,12 +185,13 @@ namespace TestExel.Services
                 }               
             }
 
-
+            ZeroCheckForCOPAndHC(standartDataPump);
             //Сheck whether data has been added, if not, then there is no data and there is no need to add it
             if (standartDataPumpChanged)
             {
                 if (!newDictionary.TryGetValue(outTemp, out var newStandartDataPump))
                 {
+                    
                     newStandartDataPump = new List<StandartDataPump>();
                     newDictionary.Add(outTemp, newStandartDataPump);
                 }
@@ -161,6 +199,31 @@ namespace TestExel.Services
                 newStandartDataPump.Add(standartDataPump);
             }
         }
+
+        private void ZeroCheckForCOPAndHC(StandartDataPump standartDataPump)
+        {
+            if (standartDataPump != null)
+            {
+                if (standartDataPump.MinHC == 0 || standartDataPump.MinCOP == 0)
+                {
+                    standartDataPump.MinHC = 0;
+                    standartDataPump.MinCOP = 0;
+                }
+
+                if (standartDataPump.MidHC == 0 || standartDataPump.MidCOP == 0)
+                {
+                    standartDataPump.MidHC = 0;
+                    standartDataPump.MidCOP = 0;
+                }
+  
+                if (standartDataPump.MaxHC == 0 || standartDataPump.MaxCOP == 0)
+                {
+                    standartDataPump.MaxHC = 0;
+                    standartDataPump.MaxCOP = 0;
+                }
+            }
+        }
+
         //Data rounding
         protected static void RoundCOPAndP(List<Pump> pumps)
         {

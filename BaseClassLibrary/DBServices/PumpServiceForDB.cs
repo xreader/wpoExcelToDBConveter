@@ -351,8 +351,8 @@ namespace TestExel.ServicesForDB
 
         protected virtual async Task CreateNew14825Data(Dictionary<int, List<StandartDataPump>> dataDictionary, int typeClimat, int wpId)
         {
-            int[] coldClimate = { -22, -20, -15, -7, 2, 7, 12 };
-            int[] midClimate = { -20, -10, -7, 2, 7, 12 };
+            int[] coldClimate = { -25, -22, -15, -7, 2, 7, 12 };
+            int[] midClimate = { -15, -10, -7, 2, 7, 12 };
             int[] warmClimate = { -7, 2, 2, 7, 12 };
 
             bool correctOutTemp = typeClimat == 1 && dataDictionary.Count > 6 ? true 
