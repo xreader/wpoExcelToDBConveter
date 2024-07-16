@@ -275,57 +275,47 @@ namespace TestExel.ServicesForDB
                 //We sort through the data we received from Excel
                 foreach (var newDataDictionary in pump.Data)
                 {
+                    if(newDataDictionary.Value.Count == 1)
+                    {
+                        var data = pump.Data.FirstOrDefault(x => x.Value.Count == 2);
+                        var oneData = newDataDictionary.Value[0];
+                        var dataWichEqualsTempOneData = data.Value.FirstOrDefault(x=>x.Temp == oneData.Temp);
+                        var NOdataWichEqualsTempOneData = data.Value.FirstOrDefault(x => x.Temp != oneData.Temp);
+                        newDataDictionary.Value.Add(new UnregulatedDataPump()
+                        {
+                            Temp = NOdataWichEqualsTempOneData.Temp,
+                            HC = Math.Round(oneData.HC * NOdataWichEqualsTempOneData.HC / dataWichEqualsTempOneData.HC,2),
+                            COP = Math.Round(oneData.COP * NOdataWichEqualsTempOneData.COP / dataWichEqualsTempOneData.COP,2),
+                            MaxVorlauftemperatur = NOdataWichEqualsTempOneData.MaxVorlauftemperatur
+                        });
+                    }
+
                     foreach (var newData in newDataDictionary.Value)
                     {
                         //We are looking for a list of records where there is data that needs to be changed and their quantity, if the number is more than 1, then we change the first one and delete the rest
-                        var listWithLeavesForUpdate = listWithleavesWithListOldLeistungdaten
+                        var listWithLeistungDaten = listWithleavesWithListOldLeistungdaten
                                      .Where(list => list.Any(leave => leave.value_as_int == newDataDictionary.Key && leave.objectid_fk_properties_objectid == 1010))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.Temp && leave.objectid_fk_properties_objectid == 1011))
                                      .Where(list => list.Any(leave => leave.value_as_int == newData.MaxVorlauftemperatur && leave.objectid_fk_properties_objectid == 1015))
                                      .ToList();
                         //If there are such records, we simply update them and delete duplicates
-                        if (listWithLeavesForUpdate.Count > 0)
+                        if (listWithLeistungDaten.Count > 0)
                         {
-                            Console.WriteLine("Update Leistungdaten");
-                            //We take the first entry for updating; subsequent repeated ones must be deleted! and must be removed both from the database and from the list
-                            var leavesForUpdate = listWithLeavesForUpdate[0];
-                            //Finding the Heizleistung - P and Update
-                            var WPleistHeiz = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1012);
-                            WPleistHeiz.value_as_int = newData.HC == 0 ? 0 : (int)(newData.HC * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistHeiz);
-                            //Finding the COP and Update
-                            var WPleistCOP = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);
-                            WPleistCOP.value_as_int = newData.HC == 0 ? 0 : (int)(newData.HC * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistCOP);
-                            //Finding the Leistungsaufnahme and Update
-                            var WPleistAuf = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1014);
-                            WPleistAuf.value_as_int = newData.COP == 0 || newData.HC == 0 ? 0 : (int)(newData.HC / newData.COP * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistAuf);
-                            //Finding the Kealteleistung and Update
-                            var WPleistKaelte = leavesForUpdate.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1013);
-                            WPleistKaelte.value_as_int = newData.COP == 0 || newData.HC == 0 ? 0 : (int)((newData.HC - 0.96 * (newData.HC / newData.COP)) * 100);
-                            await _leaveRepository.UpdateLeaves(WPleistKaelte);
-
-
-                            //We remove from the list with our data what we updated
-                            listWithLeavesForUpdate.Remove(leavesForUpdate);
-                            //Now the list contains only duplicate entries that should be removed from the database
-                            await _leaveRepository.DeleteLeaves(listWithLeavesForUpdate);
-
-                            //We remove from the list with all entries for this pump those entries that have just been updated 
-                            listWithleavesWithListOldLeistungdaten.Remove(leavesForUpdate);
-
-                            //We remove from the list with all the records for this pump those records that were deleted from the database, and also delete the connecting records from the database, that is, Node
-                            foreach (var item in listWithLeavesForUpdate)
+                            foreach (var leavesForDelete in listWithLeistungDaten)
                             {
-                                listWithleavesWithListOldLeistungdaten.Remove(item);
-                                var node = await _nodeRepository.GetNodeByIdAsync(item[0].nodeid_fk_nodes_nodeid);
-                                await _nodeRepository.DeleteNode(node);
+                                foreach (var leaveForDelete in leavesForDelete)
+                                    await _leaveRepository.DeleteLeave(leaveForDelete);
+                            }
+
+                            foreach (var idNodeForDelete in leavesIdWithOldLeistungdatenList)
+                            {
+                                var nodeForDelete = await _nodeRepository.GetNodeByIdAsync(idNodeForDelete);
+                                if (nodeForDelete != null)
+                                    await _nodeRepository.DeleteNode(nodeForDelete);
                             }
 
                         }
-                        //If there are no records with this temperature inside and the maximum temperature inside (you need to create a record)
-                        else
+                        if (newData.COP > 0 && newData.HC > 0)
                         {
                             //Create a linking record
                             Node node = new Node() { typeid_fk_types_typeid = 8, parentid_fk_nodes_nodeid = wpId, licence = 0 };
@@ -346,22 +336,12 @@ namespace TestExel.ServicesForDB
                             {
                                 await _leaveRepository.CreateLeave(leave);
                             }
-
                         }
                     }
 
 
                 }
-                //Deletes data that is not in the Excel file
-                //{
-                //    await _leaveRepository.DeleteLeaves(listWithleavesWithListOldLeistungdaten);
-                //    foreach (var item in listWithleavesWithListOldLeistungdaten)
-                //    {
-                //        var node = await _nodeRepository.GetNodeByIdAsync(item[0].nodeid_fk_nodes_nodeid);
-                //        await _nodeRepository.DeleteNode(node);
-                //    }
 
-                //}
 
 
                 Console.WriteLine("Pump -" + wp.value + " Leistungdata Update!");
@@ -371,8 +351,8 @@ namespace TestExel.ServicesForDB
 
         protected virtual async Task CreateNew14825Data(Dictionary<int, List<StandartDataPump>> dataDictionary, int typeClimat, int wpId)
         {
-            int[] coldClimate = { -22, -20, -15, -7, 2, 7, 12 };
-            int[] midClimate = { -20, -10, -7, 2, 7, 12 };
+            int[] coldClimate = { -25, -22, -15, -7, 2, 7, 12 };
+            int[] midClimate = { -15, -10, -7, 2, 7, 12 };
             int[] warmClimate = { -7, 2, 2, 7, 12 };
 
             bool correctOutTemp = typeClimat == 1 && dataDictionary.Count > 6 ? true 
