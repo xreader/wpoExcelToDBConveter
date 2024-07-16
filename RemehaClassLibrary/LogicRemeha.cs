@@ -38,8 +38,8 @@ namespace RemehaClassLibrary
                 {
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        Console.WriteLine("Write full path to Excel File for Hoval (Luft):");
-                        excelFilePath = "D:\\Work\\wpoExcelToDBConveter\\TestExel\\Remeha up 06.xlsx";
+                        Console.WriteLine("Write full path to Excel File for Remeha (Luft):");
+                        excelFilePath = Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
                         break;

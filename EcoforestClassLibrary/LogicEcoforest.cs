@@ -32,7 +32,7 @@ namespace EcoforestClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Ecoforestl (Luft):");
-                        excelFilePath = "E:\\Work\\wpoExcelToDBConveter\\TestExel\\Ecoforest\\Luft\\LuftEcoforest.xlsx";
+                        excelFilePath = Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
@@ -40,7 +40,7 @@ namespace EcoforestClassLibrary
                     case "2":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Ecoforest (Sole):");
-                        excelFilePath = "E:\\Work\\wpoExcelToDBConveter\\TestExel\\Ecoforest\\Sole\\SoleEcoforest.xlsx";
+                        excelFilePath = Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await SoleLogic(excelFilePath);
                         break;                
