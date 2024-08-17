@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestExel.DBModels;
 using TestExel.ServicesForDB;
+using TestExel.StandartModels;
 
 namespace PanasonicClassLibrary.DBService
 {
@@ -11,6 +13,6 @@ namespace PanasonicClassLibrary.DBService
     {
         public PumpServiceForDBPanasonic(string pathDB) : base(pathDB)
         {
-        }
+        }              
     }
 }

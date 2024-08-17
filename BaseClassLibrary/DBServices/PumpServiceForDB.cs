@@ -32,7 +32,7 @@ namespace TestExel.ServicesForDB
             _textRepository = new TextRepository(new ApplicationDBContext(options));
         }
 
-        public async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump, string typePump, int idCompany, int numClimat)
+        public virtual async Task ChangeDataenEN14825LGInDbByExcelData(StandartPump pump, string typePump, int idCompany, int numClimat)
         {
             var wpList = await GetWPList(pump.Name, typePump, idCompany);
             foreach (var wp in wpList)

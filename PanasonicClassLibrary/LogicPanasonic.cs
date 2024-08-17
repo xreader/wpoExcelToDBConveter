@@ -86,7 +86,7 @@ namespace PanasonicClassLibrary
             var _pumpServiceForPanasonic = new PumpServicePanasonic(excelFilePath);
             var standartPumpsForPanasonic = _pumpServiceForPanasonic.CreateListStandartPumps();
             var oldPumpsForPanasonic = _pumpServiceForPanasonic.GetAllPumpsFromExel();
-
+           
             int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
 
             int[] inTempMidFor35 = { 35, 34, 30, 27, 24 };
@@ -96,11 +96,11 @@ namespace PanasonicClassLibrary
             int[] inTempMidFor55 = { 55, 52, 42, 36, 30 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempMidFor55, inTempMidFor55, 55, "2");
 
-            int[] outTempColdFor35 = { -15, -7, 2, 7, 12 };
-            int[] inTempColdFor35 = { 35, 30, 27, 25, 24 };
+            int[] outTempColdFor35 = { -22,-15, -7, 2, 7, 12 };
+            int[] inTempColdFor35 = { 35, 35, 30, 27, 25, 24 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempColdFor35, inTempColdFor35, 35, "1");
-            int[] outTempColdFor55 = { -15, -7, 2, 7, 12 };
-            int[] inTempMidCold55 = { 55, 44, 37, 32, 30 };
+            int[] outTempColdFor55 = { -22,-15, -7, 2, 7, 12 };
+            int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempColdFor55, inTempMidCold55, 55, "1");
             int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
             int[] inTempWarmFor35 = { 35, 35, 35, 31, 26 };

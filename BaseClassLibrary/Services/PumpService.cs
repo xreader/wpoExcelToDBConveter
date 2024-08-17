@@ -131,7 +131,7 @@ namespace TestExel.Services
             return result < 0 ? 0 : result;
         }
         //Convert the data
-        protected void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
+        protected virtual void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
         {
             var standartDataPump = new StandartDataPump();
             bool standartDataPumpChanged = false;
@@ -200,7 +200,7 @@ namespace TestExel.Services
             }
         }
 
-        private void ZeroCheckForCOPAndHC(StandartDataPump standartDataPump)
+        protected void ZeroCheckForCOPAndHC(StandartDataPump standartDataPump)
         {
             if (standartDataPump != null)
             {
