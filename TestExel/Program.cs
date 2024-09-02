@@ -3,6 +3,7 @@ using HovalClassLibrary;
 using YorkClassLibrary;
 using RemehaClassLibrary;
 using EcoforestClassLibrary;
+using BrötjeClassLibrary;
 using System.Text.RegularExpressions;
 using PanasonicClassLibrary;
 
@@ -26,6 +27,7 @@ class Program
                 Console.WriteLine("4. Remeha");
                 Console.WriteLine("5. Ecofortest");
                 Console.WriteLine("6. Panasonic");
+                Console.WriteLine("7. Brötje");
                 var company = Console.ReadLine();
                 switch (company)
                 {
@@ -52,6 +54,10 @@ class Program
                     case "6":
                         var panasonic = new LogicPanasonic(dataBasePath);
                         await panasonic.GoalLogicPanasonic();
+                        break;
+                    case "7":
+                        var Brötje = new LogicBrötje(dataBasePath);
+                        await Brötje.GoalLogicBrötje();
                         break;
                     default:
                         Console.WriteLine("Error input");

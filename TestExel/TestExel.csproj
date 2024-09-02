@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AlphaInnotecClassLibrary\AlphaInnotecClassLibrary.csproj" />
     <ProjectReference Include="..\BaseClassLibrary\BaseClassLibrary.csproj" />
+    <ProjectReference Include="..\BDRClassLibrary\BrötjeClassLibrary.csproj" />
     <ProjectReference Include="..\EcoforestClassLibrary\EcoforestClassLibrary.csproj" />
     <ProjectReference Include="..\HovalClassLibrary\HovalClassLibrary.csproj" />
     <ProjectReference Include="..\PanasonicClassLibrary\PanasonicClassLibrary.csproj" />
