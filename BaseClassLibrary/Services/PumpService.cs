@@ -16,11 +16,11 @@ namespace TestExel.Services
     {
         public List<StandartPump> CreateListStandartPumps() => new List<StandartPump>();       
         //Creating a new data object according to the standard when it is in the table
-        protected StandartDataPump CreateStandartDataPump(DataPump dataPump, string climat)
+        protected StandartDataPump CreateStandartDataPump(DataPump dataPump, string climat, int forTemp)
         {
             return new StandartDataPump
             {
-                ForTemp = dataPump.Temp,
+                ForTemp = forTemp,
                 FlowTemp = dataPump.Temp,
                 Climate = climat,
                 MinHC = dataPump.MinHC,
@@ -138,7 +138,7 @@ namespace TestExel.Services
             if (oldDataPump.Any(x => x.Temp == flowTemp))
             {
                 var oldDataForThisOutAndFlowTemp = oldDataPump.FirstOrDefault(x => x.Temp == flowTemp);
-                standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp, climat);
+                standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp, climat, forTemp);
                 standartDataPumpChanged = true;
             }
             else

@@ -1,8 +1,11 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TestExel.Models;
 using TestExel.Services;
@@ -30,31 +33,26 @@ namespace BrötjeClassLibrary.Services
                 var worksheet = workbook.Worksheet(i);
                 if(worksheet.Name == "Heating performance data")
                 {
-                    var cellsWithNamePumps = GetListCellsWithNamePups("B", 10, worksheet);
-                    var cellsWithTempsPumps = GetListCellsWithTempsPups("E", 8, worksheet);
+                    var cellsWithNamePumps = GetListCellsWithNamePumps("B", 10, worksheet);
+                    var cellsWithTempsPumps = GetListCellsWithTempsPumps("E", 8, worksheet);
 
-
-
-                    var firstCellsWithOutTemp = GetFirstCellsWithOutTemp("C", 4, worksheet);
-                    foreach (var firstCellWithOutTemp in firstCellsWithOutTemp)
+                    foreach (var cellWithNamePump in cellsWithNamePumps)
                     {
                         var pump = new Pump(worksheet);
-                        pump.Name = GetNamePump(firstCellWithOutTemp, worksheet);
+                        pump.Name = cellWithNamePump.Data;
+
+                        var cellsWithPumpPower = GetListCellsWithPower(cellWithNamePump, "C",worksheet);
 
 
+                        GetDataForPump(worksheet, pump, cellsWithPumpPower, cellsWithTempsPumps);
 
+                        GetMaxForlauftTemp(pump);
 
-                        GetData35ForPump(worksheet, firstCellWithOutTemp, pump);
-                        GetData55ForPump(worksheet, firstCellWithOutTemp, pump);
                         if (pump != null && pump.Name != "")
                             pumps.Add(pump);
 
                     }
-                }
-                
-
-
-
+                }         
 
             }
             RoundCOPAndP(pumps);
@@ -62,218 +60,151 @@ namespace BrötjeClassLibrary.Services
         }
 
 
-        private List<Cell> GetListCellsWithNamePups(string letterFirstCell, int numCellWithFirtstName, IXLWorksheet worksheet)
+        private List<Cell> GetListCellsWithNamePumps(string letterFirstCell, int numCellWithFirstName, IXLWorksheet worksheet)
         {
-            var cells = new List<Cell>();
-            var column = worksheet.Column(letterFirstCell);
-            var cellsWithData = column.CellsUsed();
-            foreach (var cell in cellsWithData)
-            {
-                if (cell.Address.RowNumber >= numCellWithFirtstName)
-                    cells.Add(new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString()));
-            }
-            return cells;
+            return worksheet.Column(letterFirstCell)
+                    .CellsUsed()
+                    .Where(cell => cell.Address.RowNumber >= numCellWithFirstName)
+                    .Select(cell => new Cell(Letter: cell.Address.ColumnLetter,
+                                             Num: cell.Address.RowNumber,
+                                             Data: cell.GetString()))
+                    .ToList();
         }
 
-        private List<Cell> GetListCellsWithTempsPups(string letterFirstCell, int numCellWithFirtstName, IXLWorksheet worksheet)
+        private List<Cell> GetListCellsWithTempsPumps(string letterFirstCell, int numCellWithFirstName, IXLWorksheet worksheet)
         {
-            var cells = new List<Cell>();
             int startColumnIndex = XLHelper.GetColumnNumberFromLetter(letterFirstCell);
-            var row = worksheet.Row(numCellWithFirtstName);
-            var cellsWithData = row.CellsUsed();
-            foreach (var cell in cellsWithData)
-            {
-                if (cell.Address.ColumnNumber >= startColumnIndex)
-                    cells.Add(new Cell(Letter: cell.Address.ColumnLetter, Num: cell.Address.RowNumber, Data: cell.GetString()));
-            }
-            return cells;
+
+            return worksheet.Row(numCellWithFirstName)
+                            .CellsUsed()
+                            .Where(cell => cell.Address.ColumnNumber >= startColumnIndex)
+                            .Select(cell => new Cell(Letter: cell.Address.ColumnLetter,
+                                                     Num: cell.Address.RowNumber,
+                                                     Data: cell.GetString()))
+                            .ToList();
+        
         }
 
-
-
-
-
-        //Old
-        private List<Cell> GetFirstCellsWithOutTemp(string letterFirstCell, int numFirtstCell, IXLWorksheet worksheet)
+        private List<Cell> GetListCellsWithPower(Cell cellWithNamePump, string latterWithData ,IXLWorksheet worksheet)
         {
-            var cells = new List<Cell>();
-            bool checkout = true;
-            var firstCell = worksheet.Cell(letterFirstCell + numFirtstCell);
-            cells.Add(new Cell(Letter: firstCell.Address.ColumnLetter, Num: firstCell.Address.RowNumber, Data: firstCell.GetString()));
-            while (checkout)
-            {
-                firstCell = worksheet.Cell(letterFirstCell + numFirtstCell);
-                var secondCell = worksheet.Cell(letterFirstCell + (numFirtstCell + 1));
+            return worksheet.Column(latterWithData)
+                    .CellsUsed()
+                    .Where(cell => cell.Address.RowNumber >= cellWithNamePump.Num)
+                    .Take(3)
+                    .Select(cell => new Cell(Letter: cell.Address.ColumnLetter,
+                                             Num: cell.Address.RowNumber,
+                                             Data: cell.GetString()))
+                    .ToList();
+        }
 
-                if (firstCell.GetString() == "" && secondCell.GetString() == "")
-                    checkout = false;
-                if (firstCell.GetString() == "" && secondCell.GetString() != "")
+        private void GetDataForPump(IXLWorksheet worksheet, Pump pump, List<Cell> cellsWithPumpPower, List<Cell> cellsWithTempsPumps)
+        {
+            if (pump.Data == null)
+                pump.Data = new Dictionary<int, List<DataPump>>();
+            
+            var indexHC = 1;
+            var indexCOP = 3;
+            foreach (var cellWithTempsPumps in cellsWithTempsPumps)
+            {
+                var tempOutIndex = 0;
+                for (int i = 0; i< cellsWithPumpPower[1].Num - cellsWithPumpPower[0].Num; i++)
                 {
-                    cells.Add(new Cell(Letter: secondCell.Address.ColumnLetter, Num: secondCell.Address.RowNumber, Data: secondCell.GetString()));
+                    var typePower = 0;
+
+                    var dataPump = new DataPump()
+                    {
+                         MaxVorlauftemperatur = 55,
+                         Temp = Convert.ToInt32(cellWithTempsPumps.Data)                         
+                    };
+
+                    var outTempCurrent = worksheet.Cell(cellsWithPumpPower[0].Num + tempOutIndex, XLHelper.GetColumnNumberFromLetter(cellsWithPumpPower[0].Letter) + 1);
+                    pump.Data.TryGetValue(Convert.ToInt32(outTempCurrent.GetString()), out var datasPump);
+                    if (datasPump == null)
+                        datasPump = new List<DataPump>();
+
+                    foreach (var cellWithPumpPower in cellsWithPumpPower)
+                    {
+                        int letterColumnWithOutTemps = XLHelper.GetColumnNumberFromLetter(cellWithPumpPower.Letter) + 1;
+                        var cellOutTemps = worksheet.Cell(cellWithPumpPower.Num + tempOutIndex, letterColumnWithOutTemps);
+
+
+                        double HC;
+                        var cellValueHC = worksheet.Cell(cellOutTemps.Address.RowNumber, cellOutTemps.Address.ColumnNumber + indexHC).CachedValue.ToString();
+
+                        if (!double.TryParse(cellValueHC, out HC))
+                        {
+                            HC = 0;
+                        }
+                        double COP;
+                        var cellValueCOP = worksheet.Cell(cellOutTemps.Address.RowNumber, cellOutTemps.Address.ColumnNumber + indexCOP).CachedValue.ToString();
+
+                        if (!double.TryParse(cellValueCOP, out COP))
+                        {
+                            COP = 0;
+                        }
+                        
+
+                        if(typePower == 2)
+                        {
+                            dataPump.MinHC = HC;
+                            dataPump.MinCOP = COP;
+                        }
+                        if (typePower == 1)
+                        {
+                            dataPump.MidHC = HC;
+                            dataPump.MidCOP = COP;
+                        }
+                        if (typePower == 0)
+                        {
+                            dataPump.MaxHC = HC;
+                            dataPump.MaxCOP = COP;
+                        }
+                        typePower++;
+                    }
+
+                    tempOutIndex++;
+                    datasPump.Add(dataPump);
+
+
+                    if (!pump.Data.Any(x => x.Key == Convert.ToInt32(outTempCurrent.GetString())))
+                        pump.Data.Add(Convert.ToInt32(outTempCurrent.GetString()), datasPump);
+                }                
+
+                indexHC += 3;
+                indexCOP += 3;
+            }
+
+
+        }
+        
+        private void GetMaxForlauftTemp(Pump pump)
+        {
+            var maxForlaufttemperatur = 35;
+            foreach(var data in pump.Data)
+            {
+                pump.Data.TryGetValue(data.Key, out var datasPump);
+
+                for(int i = datasPump.Count - 1; i > 0; i--)
+                {
+                    var d = datasPump[i];
+                    if (d.MaxCOP != 0 && d.MaxHC != 0)
+                    {
+                        maxForlaufttemperatur = d.Temp;
+                        break;
+                    }
+                    else
+                    {
+                        datasPump.Remove(d);
+                    }
                 }
-
-
-                numFirtstCell++;
-            }
-
-
-
-            return cells;
-        }
-        private string GetNamePump(Cell cellsWithOutTemps, IXLWorksheet worksheet)
-        {
-            string namePump = "";
-
-            if (cellsWithOutTemps != null)
-            {
-                int startColumnIndex = XLHelper.GetColumnNumberFromLetter(cellsWithOutTemps.Letter);
-                var firstName = worksheet.Cell(cellsWithOutTemps.Num, startColumnIndex - 2);
-                var secondName = worksheet.Cell(cellsWithOutTemps.Num, startColumnIndex - 1);
-                if (firstName.GetString() == "")
-                    namePump = secondName.GetString();
-                else
-                    namePump = firstName.GetString() + " + " + secondName.GetString();
-            }
-
-
-
-            return namePump;
-        }
-        private void GetData35ForPump(IXLWorksheet _sheet, Cell cellWithOutTemp, Pump pump)
-        {
-            if (pump.Data == null)
-                pump.Data = new Dictionary<int, List<DataPump>>();
-            bool chekout = true;
-            var num = cellWithOutTemp.Num;
-            while (chekout)
-            {
-                var cell = _sheet.Cell(cellWithOutTemp.Letter + num);
-
-                pump.Data.TryGetValue(Convert.ToInt32(cell.GetString()), out var datasPump);
-                if (datasPump == null)
-                    datasPump = new List<DataPump>();
-                var midHCLetter = "Z";
-                var maxHCLetter = "G";
-                var midCOPLetter = "AA";
-                var maxCOPLetter = "K";
-                var midHC = _sheet.Cell(num, midHCLetter).Value.ToString();
-                var midCOP = _sheet.Cell(num, midCOPLetter).Value.ToString();
-                var maxHC = _sheet.Cell(num, maxHCLetter).Value.ToString();
-                var maxCOP = _sheet.Cell(num, maxCOPLetter).Value.ToString();
-
-                var dataPump = new DataPump()
+                foreach (var dat in datasPump)
                 {
-                    MaxVorlauftemperatur = Convert.ToInt32(_sheet.Cell("M" + num).GetString()),
-                    Temp = 35,
-                    MinHC = 0,
-                    MinCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                    MidHC = midHC == "" || midHC == "-" ? 0 : Convert.ToDouble(midHC),
-                    MidCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                    MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxHC),
-                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxCOP)
-
-                };
-                if (dataPump.MaxCOP < 1)
-                    dataPump.MaxCOP = 1;
-                if (dataPump.MidHC > 0)
-                    dataPump.MinHC = dataPump.MaxHC / 2 < 1 ? 1.1 : dataPump.MaxHC / 2;
-                datasPump.Add(dataPump);
-
-
-                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cell.GetString())))
-                    pump.Data.Add(Convert.ToInt32(cell.GetString()), datasPump);
-
-
-                num++;
-                if (_sheet.Cell(cellWithOutTemp.Letter + num).GetString() == "")
-                    chekout = false;
+                    dat.MaxVorlauftemperatur = maxForlaufttemperatur;   
+                    
+                }
             }
-
-        }
-        private void GetData55ForPump(IXLWorksheet _sheet, Cell cellWithOutTemp, Pump pump)
-        {
-            if (pump.Data == null)
-                pump.Data = new Dictionary<int, List<DataPump>>();
-            bool chekout = true;
-            var num = cellWithOutTemp.Num;
-            while (chekout)
-            {
-                var cell = _sheet.Cell(cellWithOutTemp.Letter + num);
-
-                pump.Data.TryGetValue(Convert.ToInt32(cell.GetString()), out var datasPump);
-                if (datasPump == null)
-                    datasPump = new List<DataPump>();
-                var midHCLetter = "AB";
-                var maxHCLetter = "S";
-                var midCOPLetter = "AC";
-                var maxCOPLetter = "W";
-
-                var midHC = _sheet.Cell(num, midHCLetter).Value.ToString();
-                var midCOP = _sheet.Cell(num, midCOPLetter).Value.ToString();
-                var maxHC = _sheet.Cell(num, maxHCLetter).Value.ToString();
-                var maxCOP = _sheet.Cell(num, maxCOPLetter).Value.ToString();
-
-                var dataPump = new DataPump()
-                {
-                    MaxVorlauftemperatur = Convert.ToInt32(_sheet.Cell("M" + num).GetString()),
-                    Temp = 55,
-                    MinHC = 0,
-                    MinCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                    MidHC = midHC == "" || midHC == "-" ? 0 : Convert.ToDouble(midHC),
-                    MidCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                    MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxHC),
-                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxCOP)
-                };
-
-                if (dataPump.MaxCOP < 1)
-                    dataPump.MaxCOP = 1;
-                if (dataPump.MidHC > 0)
-                    dataPump.MinHC = dataPump.MaxHC / 2 < 1 ? 1.1 : dataPump.MaxHC / 2;
-
-                datasPump.Add(dataPump);
-
-
-
-                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cell.GetString())))
-                    pump.Data.Add(Convert.ToInt32(cell.GetString()), datasPump);
-
-
-                num++;
-                if (_sheet.Cell(cellWithOutTemp.Letter + num).GetString() == "")
-                    chekout = false;
-            }
-
         }
 
-        private double GetMaxDataWhenDataNull(IXLWorksheet worksheet, int currentNum, string letterWithData, string letterWithOutTemp, int currentOutTemp)
-        {
-            var lowDataString = worksheet.Cell(currentNum - 1, letterWithData).Value.ToString();
-            var highDataString = worksheet.Cell(currentNum + 1, letterWithData).Value.ToString();
-            var lowOutTempString = worksheet.Cell(currentNum - 1, letterWithOutTemp).Value.ToString();
-            var highOutTempString = worksheet.Cell(currentNum + 1, letterWithOutTemp).Value.ToString();
-            if (lowDataString.Contains("Max") || lowDataString == "")
-            {
-                lowDataString = highDataString;
-                highDataString = worksheet.Cell(currentNum + 2, letterWithData).Value.ToString();
-                lowOutTempString = highOutTempString;
-                highOutTempString = worksheet.Cell(currentNum + 2, letterWithOutTemp).Value.ToString();
-            }
-            if (highDataString == "")
-            {
-                highDataString = lowDataString;
-                lowDataString = worksheet.Cell(currentNum - 2, letterWithData).Value.ToString();
-                highOutTempString = lowOutTempString;
-                lowOutTempString = worksheet.Cell(currentNum - 2, letterWithOutTemp).Value.ToString();
-            }
-
-            double lowData = Convert.ToDouble(lowDataString);
-            double highData = Convert.ToDouble(highDataString);
-            int lowOutTemp = Convert.ToInt32(lowOutTempString);
-            int highOutTemp = Convert.ToInt32(highOutTempString);
-            return lowData + ((highData - lowData) / (highOutTemp - lowOutTemp)) * (currentOutTemp - lowOutTemp);
-
-
-        }
 
         public List<StandartPump> GetDataInListStandartPumpsForLuftBrötje(List<StandartPump> standartPumps, List<Pump> oldPumps, int[] outTemps, int[] flowTemps, int forTemp, string climat)
         {
@@ -355,76 +286,7 @@ namespace BrötjeClassLibrary.Services
                     ConvertDataInStandart(oldDataPump, flowTemp[i], outTemps[i], forTemp, climat, newDictionary, oldPump);
                 }
             }
-        }
-        //Convert the data
-        protected override void ConvertDataInStandart(List<DataPump> oldDataPump, int flowTemp, int outTemp, int forTemp, string climat, Dictionary<int, List<StandartDataPump>> newDictionary, Pump oldPump)
-        {
-            var standartDataPump = new StandartDataPump();
-            bool standartDataPumpChanged = false;
-            if (oldDataPump.Any(x => x.Temp == flowTemp))
-            {
-                var oldDataForThisOutAndFlowTemp = oldDataPump.FirstOrDefault(x => x.Temp == flowTemp);
-                standartDataPump = CreateStandartDataPump(oldDataForThisOutAndFlowTemp, climat);
-                standartDataPumpChanged = true;
-            }
-            else
-            {
-                var oldDataWithHighGrad = oldDataPump.FirstOrDefault(x => x.Temp == 55);
-                var oldDataWithLowGrad = oldDataPump.FirstOrDefault(x => x.Temp == 35);
-                if (oldDataWithHighGrad == null && oldDataWithLowGrad != null && forTemp <= 35)
-                {
-                    var listWith55GradData = oldPump.Data.Where(kv => kv.Value.Any(dp => dp.Temp == 55)).Select(kv => kv.Key);
-                    if (listWith55GradData.Count() >= 2)
-                    {
-                        var oldKeyWithLowTempOut = listWith55GradData.ElementAtOrDefault(0);
-                        var oldKeyWithHighTempOut = listWith55GradData.ElementAtOrDefault(1);
-                        oldPump.Data.TryGetValue(oldKeyWithLowTempOut, out List<DataPump> oldDataWithLowTempOutList);
-                        oldPump.Data.TryGetValue(oldKeyWithHighTempOut, out List<DataPump> oldDataWithHighTempOutList);
-                        var oldDataWithLowTempOut = oldDataWithLowTempOutList.FirstOrDefault(x => x.Temp == 55);
-                        var oldDataWithHighTempOut = oldDataWithHighTempOutList.FirstOrDefault(x => x.Temp == 55);
-                        oldDataWithHighGrad = new DataPump()
-                        {
-                            MaxVorlauftemperatur = oldDataWithLowGrad.MaxVorlauftemperatur,
-                            Temp = 55,
-                            MinHC = oldDataWithLowTempOut.MinHC + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MinHC - oldDataWithLowTempOut.MinHC) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
-                            MidHC = oldDataWithLowTempOut.MidHC + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MidHC - oldDataWithLowTempOut.MidHC) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
-                            MaxHC = oldDataWithLowTempOut.MaxHC + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MaxHC - oldDataWithLowTempOut.MaxHC) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
-                            MinCOP = oldDataWithLowTempOut.MinCOP + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MinCOP - oldDataWithLowTempOut.MinCOP) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
-                            MidCOP = oldDataWithLowTempOut.MidCOP + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MidCOP - oldDataWithLowTempOut.MidCOP) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut)),
-                            MaxCOP = oldDataWithLowTempOut.MaxCOP + (outTemp - oldKeyWithLowTempOut) * ((oldDataWithHighTempOut.MaxCOP - oldDataWithLowTempOut.MaxCOP) / (oldKeyWithHighTempOut - oldKeyWithLowTempOut))
-                        };
-
-
-
-
-                    }
-
-
-
-                }
-
-                if (oldDataWithHighGrad != null && oldDataWithLowGrad != null)
-                {
-                    standartDataPump = CreateStandartDataPumpWannOtherTemp(oldDataWithHighGrad, oldDataWithLowGrad, flowTemp, forTemp, climat);
-
-                    standartDataPumpChanged = true;
-                }
-            }
-
-            ZeroCheckForCOPAndHC(standartDataPump);
-            //Сheck whether data has been added, if not, then there is no data and there is no need to add it
-            if (standartDataPumpChanged)
-            {
-                if (!newDictionary.TryGetValue(outTemp, out var newStandartDataPump))
-                {
-
-                    newStandartDataPump = new List<StandartDataPump>();
-                    newDictionary.Add(outTemp, newStandartDataPump);
-                }
-
-                newStandartDataPump.Add(standartDataPump);
-            }
-        }
+        }        
 
     }
 }
