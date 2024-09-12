@@ -50,35 +50,6 @@ namespace BrötjeClassLibrary
                 }
             }
 
-
-            //foreach (var pump in standartPumpsForBrötje)
-            //{
-            //    Console.WriteLine(pump.Name);
-
-            //    foreach (var kvp in pump.Data)
-            //    {
-            //        Console.WriteLine($"Key: {kvp.Key}");
-
-            //        foreach (var dataPump in kvp.Value)
-            //        {
-            //            Console.WriteLine($"Temp: {dataPump.ForTemp}");
-            //            Console.WriteLine($"FlowTemp: {dataPump.FlowTemp}");
-            //            Console.WriteLine($"Climate: {dataPump.Climate}");
-            //            Console.WriteLine($"MaxVorlauftemperatur: {dataPump.MaxVorlauftemperatur}");
-            //            Console.WriteLine($"MinHC: {dataPump.MinHC}");
-            //            Console.WriteLine($"MidHC: {dataPump.MidHC}");
-            //            Console.WriteLine($"MaxHC: {dataPump.MaxHC}");
-            //            Console.WriteLine($"MinCOP: {dataPump.MinCOP}");
-            //            Console.WriteLine($"MidCOP: {dataPump.MidCOP}");
-            //            Console.WriteLine($"MaxCOP: {dataPump.MaxCOP}");
-
-            //            Console.WriteLine();
-            //        }
-            //    }
-            //}
-
-
-
         }
 
         private async Task LuftLogic(string excelFilePath)
