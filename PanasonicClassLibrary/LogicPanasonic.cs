@@ -83,6 +83,12 @@ namespace PanasonicClassLibrary
 
         private async Task LuftLogic(string excelFilePath)
         {
+
+            //
+            Console.WriteLine("Спроситьт за ToL почему там -28 и за средние значения почему одни меншье максимальные значения, и автоматищировать для охдеждения данные");
+            Console.WriteLine("Автоматизация KulenData и автоматизация LabelAssigment");
+
+            
             var _pumpServiceForPanasonic = new PumpServicePanasonic(excelFilePath);
             var standartPumpsForPanasonic = _pumpServiceForPanasonic.CreateListStandartPumps();
             var oldPumpsForPanasonic = _pumpServiceForPanasonic.GetAllPumpsFromExel();

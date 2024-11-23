@@ -12,7 +12,7 @@ class Program
     static async Task Main()
     { 
         Console.WriteLine("Write full path to Data Base:");
-        string dataBasePath = Console.ReadLine(); //"E:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";
+        string dataBasePath = "E:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";
 
 
         if (dataBasePath != null)

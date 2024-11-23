@@ -48,6 +48,10 @@ namespace BrötjeClassLibrary.Services
 
                         GetMaxForlauftTemp(pump);
 
+                        //Check Method
+                        LeaveDataOnlyFor35AND55(pump);
+
+
                         if (pump != null && pump.Name != "")
                             pumps.Add(pump);
 
@@ -58,7 +62,27 @@ namespace BrötjeClassLibrary.Services
             RoundCOPAndP(pumps);
             return pumps;
         }
-
+        //Method to remove unnecessary data and insert data only for 35 and 55 degrees
+        private void LeaveDataOnlyFor35AND55(Pump pump)
+        {
+            foreach (var data in pump.Data)
+            {
+                pump.Data.TryGetValue(data.Key, out var datasPump);
+                List<short> removeIndexes = new List<short>();
+                for (short i = 0; i < datasPump.Count; i++)
+                {
+                    if (datasPump[i].Temp != 35 && datasPump[i].Temp != 55)
+                    {
+                        removeIndexes.Add(i);
+                        
+                    }
+                }
+                if(datasPump.Count > 2) {
+                    datasPump.RemoveRange(removeIndexes[0], removeIndexes.Count);
+                }
+                
+            }
+        }
 
         private List<Cell> GetListCellsWithNamePumps(string letterFirstCell, int numCellWithFirstName, IXLWorksheet worksheet)
         {

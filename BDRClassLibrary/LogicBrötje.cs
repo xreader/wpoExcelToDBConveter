@@ -36,7 +36,7 @@ namespace BrötjeClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Brötjel (Luft):");
-                        excelFilePath = Console.ReadLine();//"E:\\Work\\wpoExcelToDBConveter\\TestExel\\Brötje\\BrötjeDATA.xlsx"; 
+                        excelFilePath = "E:\\Work\\wpoExcelToDBConveter\\TestExel\\Brötje\\BrötjeDATA_24.11_with_-25daten.xlsx"; 
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
