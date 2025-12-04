@@ -14,7 +14,7 @@ class Program
     static async Task Main()
     { 
         Console.WriteLine("Write full path to Data Base:");
-        string dataBasePath = @"E:\Work\New DB Out Git\wpopt-server\database\wpov5_referenz.db";
+        string dataBasePath = Console.ReadLine();
 
 
         if (dataBasePath != null)
