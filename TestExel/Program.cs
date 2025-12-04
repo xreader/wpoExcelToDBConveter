@@ -6,13 +6,15 @@ using EcoforestClassLibrary;
 using BrötjeClassLibrary;
 using System.Text.RegularExpressions;
 using PanasonicClassLibrary;
+using DocumentFormat.OpenXml.Presentation;
+using MitsubishiClassLibrary;
 
 class Program
 {
     static async Task Main()
     { 
         Console.WriteLine("Write full path to Data Base:");
-        string dataBasePath = Console.ReadLine(); //"E:\\Work\\wpopt-server\\wpoServer\\bin\\Debug\\wpov5_referenz_change.db";
+        string dataBasePath = @"E:\Work\New DB Out Git\wpopt-server\database\wpov5_referenz.db";
 
 
         if (dataBasePath != null)
@@ -28,6 +30,7 @@ class Program
                 Console.WriteLine("5. Ecofortest");
                 Console.WriteLine("6. Panasonic");
                 Console.WriteLine("7. Brötje");
+                Console.WriteLine("8. Mitsubishi");
                 var company = Console.ReadLine();
                 switch (company)
                 {
@@ -58,6 +61,10 @@ class Program
                     case "7":
                         var Brötje = new LogicBrötje(dataBasePath);
                         await Brötje.GoalLogicBrötje();
+                        break;
+                    case "8":
+                        var mitsubishi = new LogicMitsubishi(dataBasePath);
+                        await mitsubishi.GoalLogicMitsubishi();
                         break;
                     default:
                         Console.WriteLine("Error input");
