@@ -31,7 +31,7 @@ public class LogicMitsubishi
                 case "1":
                     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     Console.WriteLine("Write full path to Excel File for Mitsubishil (Luft):");
-                    excelFilePath = "E:\\Work\\ExelPaser\\wpoExcelToDBConveter\\TestExel\\Mitsubishi.xlsx";//"E:\\Work\\wpoExcelToDBConveter\\TestExel\\Mitsubishi\\MitsubishiDATA.xlsx"; 
+                    excelFilePath = Console.ReadLine();//"E:\\Work\\wpoExcelToDBConveter\\TestExel\\Mitsubishi\\MitsubishiDATA.xlsx"; 
                                                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     await LuftLogic(excelFilePath);
 
