@@ -22,6 +22,46 @@ namespace PanasonicClassLibrary.Services
         {
             workbook = new XLWorkbook(excelFilePath);
         }
+
+        // Helper: Safe Int32 conversion with detailed error message
+        private int SafeToInt32(string value, string sheetName, string cellRef, string context = "")
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new FormatException(
+                    $"Leere Zelle gefunden wo ein Integer-Wert erwartet wird.\n" +
+                    $"  Sheet: '{sheetName}'\n" +
+                    $"  Zelle: {cellRef}\n" +
+                    $"  Kontext: {context}\n" +
+                    $"  Bitte Excel-Datei prüfen und korrigieren.");
+            if (!int.TryParse(value, out int result))
+                throw new FormatException(
+                    $"Ungültiger Integer-Wert: '{value}'\n" +
+                    $"  Sheet: '{sheetName}'\n" +
+                    $"  Zelle: {cellRef}\n" +
+                    $"  Kontext: {context}\n" +
+                    $"  Bitte Excel-Datei prüfen und korrigieren.");
+            return result;
+        }
+
+        // Helper: Safe Double conversion with detailed error message
+        private double SafeToDouble(string value, string sheetName, string cellRef, string context = "")
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new FormatException(
+                    $"Leere Zelle gefunden wo ein Zahlenwert erwartet wird.\n" +
+                    $"  Sheet: '{sheetName}'\n" +
+                    $"  Zelle: {cellRef}\n" +
+                    $"  Kontext: {context}\n" +
+                    $"  Bitte Excel-Datei prüfen und korrigieren.");
+            if (!double.TryParse(value, out double result))
+                throw new FormatException(
+                    $"Ungültiger Zahlenwert: '{value}'\n" +
+                    $"  Sheet: '{sheetName}'\n" +
+                    $"  Zelle: {cellRef}\n" +
+                    $"  Kontext: {context}\n" +
+                    $"  Bitte Excel-Datei prüfen und korrigieren.");
+            return result;
+        }
         //Get all pumps from Exel
         public List<Pump> GetAllPumpsFromExel()
         {
@@ -30,49 +70,88 @@ namespace PanasonicClassLibrary.Services
             for (int i = 1; i <= sheetsCount; i++)
             {
                 var worksheet = workbook.Worksheet(i);
-                var firstCellsWithOutTemp = GetFirstCellsWithOutTemp("C",4,worksheet);
-                foreach(var firstCellWithOutTemp in firstCellsWithOutTemp)
+                // Skip template sheets
+                if (worksheet.Name.Contains("TEMPLATE", StringComparison.OrdinalIgnoreCase))
                 {
-                    var pump = new Pump(worksheet);
-                    pump.Name = GetNamePump(firstCellWithOutTemp, worksheet);
-                    
-
-                    
-
-                    GetData35ForPump(worksheet, firstCellWithOutTemp, pump);
-                    GetData55ForPump(worksheet, firstCellWithOutTemp, pump);
-                    if (pump != null && pump.Name != "")
-                        pumps.Add(pump);
-
+                    Console.WriteLine($"  Sheet '{worksheet.Name}' übersprungen (Template).");
+                    continue;
                 }
+                var firstCellsWithOutTemp = GetFirstCellsWithOutTemp("C", 4, worksheet);
+                foreach (var firstCellWithOutTemp in firstCellsWithOutTemp)
+                {
+                    try
+                    {
+                        var pump = new Pump(worksheet);
+                        pump.Name = GetNamePump(firstCellWithOutTemp, worksheet);
 
-                
+                        // Read backup heater capacity from column X (same row as pump name)
+                        // Name might be in same row or one row above temp data
+                        int nameRow = firstCellWithOutTemp.Num;
+                        var nameCheck = worksheet.Cell(nameRow, 1); // Column A
+                        if (nameCheck.GetString() == "" && nameRow > 1)
+                            nameRow = nameRow - 1;
 
+                        var heaterCell = worksheet.Cell(nameRow, 24); // Column X = 24
+                        if (heaterCell != null && !heaterCell.IsEmpty())
+                        {
+                            var heaterStr = heaterCell.GetString();
+                            if (int.TryParse(heaterStr, out int heaterKW))
+                                pump.BackupHeaterKW = heaterKW;
+                        }
 
+                        GetData35ForPump(worksheet, firstCellWithOutTemp, pump);
+                        GetData55ForPump(worksheet, firstCellWithOutTemp, pump);
+                        if (pump != null && pump.Name != "")
+                            pumps.Add(pump);
+                    }
+                    catch (FormatException ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n*** FEHLER beim Einlesen von Sheet '{worksheet.Name}' ***");
+                        Console.WriteLine(ex.Message);
+                        Console.ResetColor();
+                        Console.WriteLine($"\nPump-Name: {GetNamePump(firstCellWithOutTemp, worksheet)}");
+                        Console.WriteLine($"StartZelle: {firstCellWithOutTemp.Letter}{firstCellWithOutTemp.Num}");
+                        Console.WriteLine("\nBitte Excel-Datei korrigieren und erneut versuchen.");
+                        throw; // Re-throw damit der Aufrufer (LogicPanasonic) den Retry machen kann
+                    }
+                }
             }
             RoundCOPAndP(pumps);
             return pumps;
         }
 
         //New
-        private List<Cell> GetFirstCellsWithOutTemp (string letterFirstCell, int numFirtstCell, IXLWorksheet worksheet)
+        private List<Cell> GetFirstCellsWithOutTemp(string letterFirstCell, int numFirtstCell, IXLWorksheet worksheet)
         {
             var cells = new List<Cell>();
             bool checkout = true;
             var firstCell = worksheet.Cell(letterFirstCell + numFirtstCell);
-            cells.Add(new Cell(Letter: firstCell.Address.ColumnLetter, Num: firstCell.Address.RowNumber, Data: firstCell.GetString()));
+            if (firstCell.GetString() != "")
+                cells.Add(new Cell(Letter: firstCell.Address.ColumnLetter, Num: firstCell.Address.RowNumber, Data: firstCell.GetString()));
+            int emptyCount = 0;
             while (checkout)
             {
                 firstCell = worksheet.Cell(letterFirstCell + numFirtstCell);
                 var secondCell = worksheet.Cell(letterFirstCell + (numFirtstCell + 1));
 
-                if (firstCell.GetString() == "" && secondCell.GetString() == "")
-                    checkout = false;
-                if(firstCell.GetString() == "" && secondCell.GetString() != "")
+                if (firstCell.GetString() == "")
+                {
+                    emptyCount++;
+                    // Stop after 3 consecutive empty cells in column C
+                    if (emptyCount >= 3)
+                        checkout = false;
+                }
+                else
+                {
+                    emptyCount = 0;
+                }
+
+                if (firstCell.GetString() == "" && secondCell.GetString() != "")
                 {
                     cells.Add(new Cell(Letter: secondCell.Address.ColumnLetter, Num: secondCell.Address.RowNumber, Data: secondCell.GetString()));
                 }
-                    
+
 
                 numFirtstCell++;
             }
@@ -84,12 +163,21 @@ namespace PanasonicClassLibrary.Services
         private string GetNamePump(Cell cellsWithOutTemps, IXLWorksheet worksheet)
         {
             string namePump = "";
-            
+
             if (cellsWithOutTemps != null)
             {
                 int startColumnIndex = XLHelper.GetColumnNumberFromLetter(cellsWithOutTemps.Letter);
-                var firstName = worksheet.Cell(cellsWithOutTemps.Num, startColumnIndex-2);
+                var firstName = worksheet.Cell(cellsWithOutTemps.Num, startColumnIndex - 2);
                 var secondName = worksheet.Cell(cellsWithOutTemps.Num, startColumnIndex - 1);
+
+                // If name not in same row as temp data, check one row above
+                // (some sheets have pump name in a separate row above the temperature data)
+                if (firstName.GetString() == "" && secondName.GetString() == "" && cellsWithOutTemps.Num > 1)
+                {
+                    firstName = worksheet.Cell(cellsWithOutTemps.Num - 1, startColumnIndex - 2);
+                    secondName = worksheet.Cell(cellsWithOutTemps.Num - 1, startColumnIndex - 1);
+                }
+
                 if (firstName.GetString() == "")
                     namePump = secondName.GetString();
                 else
@@ -100,56 +188,61 @@ namespace PanasonicClassLibrary.Services
 
             return namePump;
         }
-        private void GetData35ForPump(IXLWorksheet _sheet,Cell cellWithOutTemp, Pump pump)
+        private void GetData35ForPump(IXLWorksheet _sheet, Cell cellWithOutTemp, Pump pump)
         {
             if (pump.Data == null)
                 pump.Data = new Dictionary<int, List<DataPump>>();
             bool chekout = true;
             var num = cellWithOutTemp.Num;
+            var sheetName = _sheet.Name;
             while (chekout)
             {
                 var cell = _sheet.Cell(cellWithOutTemp.Letter + num);
-                
-                pump.Data.TryGetValue(Convert.ToInt32(cell.GetString()), out var datasPump);
+                var cellRef = cellWithOutTemp.Letter + num;
+                var cellString = cell.GetString();
+
+                int outTemp = SafeToInt32(cellString, sheetName, cellRef, "Außentemperatur (35°C Block)");
+                pump.Data.TryGetValue(outTemp, out var datasPump);
                 if (datasPump == null)
                     datasPump = new List<DataPump>();
                 var midHCLetter = "Z";
                 var maxHCLetter = "G";
                 var midCOPLetter = "AA";
-                var maxCOPLetter = "K";                
+                var maxCOPLetter = "K";
                 var midHC = _sheet.Cell(num, midHCLetter).Value.ToString();
                 var midCOP = _sheet.Cell(num, midCOPLetter).Value.ToString();
                 var maxHC = _sheet.Cell(num, maxHCLetter).Value.ToString();
                 var maxCOP = _sheet.Cell(num, maxCOPLetter).Value.ToString();
 
+                var maxVLString = _sheet.Cell("M" + num).GetString();
                 var dataPump = new DataPump()
                 {
-                    MaxVorlauftemperatur = Convert.ToInt32(_sheet.Cell("M" + num).GetString()),
+                    MaxVorlauftemperatur = string.IsNullOrWhiteSpace(maxVLString) ? 0 : SafeToInt32(maxVLString, sheetName, "M" + num, "Max. Vorlauftemperatur (35°C Block)"),
                     Temp = 35,
                     MinHC = 0,
                     MinCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
                     MidHC = midHC == "" || midHC == "-" ? 0 : Convert.ToDouble(midHC),
                     MidCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                    MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxHC),
-                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxCOP)
+                    MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, outTemp) : Convert.ToDouble(maxHC),
+                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, outTemp) : Convert.ToDouble(maxCOP)
 
                 };
-                if(dataPump.MaxCOP < 1)
+                if (dataPump.MaxCOP < 1)
                     dataPump.MaxCOP = 1;
                 if (dataPump.MidHC > 0)
                     dataPump.MinHC = dataPump.MaxHC / 2 < 1 ? 1.1 : dataPump.MaxHC / 2;
                 datasPump.Add(dataPump);
-                
-                
-                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cell.GetString())))
-                    pump.Data.Add(Convert.ToInt32(cell.GetString()), datasPump);
+
+
+                if (!pump.Data.Any(x => x.Key == outTemp))
+                    pump.Data.Add(outTemp, datasPump);
 
 
                 num++;
                 if (_sheet.Cell(cellWithOutTemp.Letter + num).GetString() == "")
                     chekout = false;
             }
-            
+
         }
         private void GetData55ForPump(IXLWorksheet _sheet, Cell cellWithOutTemp, Pump pump)
         {
@@ -157,33 +250,38 @@ namespace PanasonicClassLibrary.Services
                 pump.Data = new Dictionary<int, List<DataPump>>();
             bool chekout = true;
             var num = cellWithOutTemp.Num;
+            var sheetName = _sheet.Name;
             while (chekout)
             {
                 var cell = _sheet.Cell(cellWithOutTemp.Letter + num);
+                var cellRef = cellWithOutTemp.Letter + num;
+                var cellString = cell.GetString();
 
-                pump.Data.TryGetValue(Convert.ToInt32(cell.GetString()), out var datasPump);
+                int outTemp = SafeToInt32(cellString, sheetName, cellRef, "Außentemperatur (55°C Block)");
+                pump.Data.TryGetValue(outTemp, out var datasPump);
                 if (datasPump == null)
                     datasPump = new List<DataPump>();
                 var midHCLetter = "AB";
                 var maxHCLetter = "S";
                 var midCOPLetter = "AC";
                 var maxCOPLetter = "W";
-                
+
                 var midHC = _sheet.Cell(num, midHCLetter).Value.ToString();
                 var midCOP = _sheet.Cell(num, midCOPLetter).Value.ToString();
                 var maxHC = _sheet.Cell(num, maxHCLetter).Value.ToString();
                 var maxCOP = _sheet.Cell(num, maxCOPLetter).Value.ToString();
 
-               var dataPump = new DataPump()
+                var maxVLString55 = _sheet.Cell("M" + num).GetString();
+                var dataPump = new DataPump()
                 {
-                    MaxVorlauftemperatur = Convert.ToInt32(_sheet.Cell("M" + num).GetString()),
+                    MaxVorlauftemperatur = string.IsNullOrWhiteSpace(maxVLString55) ? 0 : SafeToInt32(maxVLString55, sheetName, "M" + num, "Max. Vorlauftemperatur (55°C Block)"),
                     Temp = 55,
                     MinHC = 0,
-                   MinCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                   MidHC = midHC == "" || midHC == "-" ? 0 : Convert.ToDouble(midHC),
-                   MidCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
-                   MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxHC),
-                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, Convert.ToInt32(cell.GetString())) : Convert.ToDouble(maxCOP)
+                    MinCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
+                    MidHC = midHC == "" || midHC == "-" ? 0 : Convert.ToDouble(midHC),
+                    MidCOP = midCOP == "" || midCOP == "-" ? 0 : Convert.ToDouble(midCOP) > 1 ? Convert.ToDouble(midCOP) : 1,
+                    MaxHC = maxHC == "" || maxHC == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxHCLetter, cellWithOutTemp.Letter, outTemp) : Convert.ToDouble(maxHC),
+                    MaxCOP = maxCOP == "" || maxCOP == "-" ? GetMaxDataWhenDataNull(_sheet, num, maxCOPLetter, cellWithOutTemp.Letter, outTemp) : Convert.ToDouble(maxCOP)
                 };
 
                 if (dataPump.MaxCOP < 1)
@@ -195,8 +293,8 @@ namespace PanasonicClassLibrary.Services
 
 
 
-                if (!pump.Data.Any(x => x.Key == Convert.ToInt32(cell.GetString())))
-                    pump.Data.Add(Convert.ToInt32(cell.GetString()), datasPump);
+                if (!pump.Data.Any(x => x.Key == outTemp))
+                    pump.Data.Add(outTemp, datasPump);
 
 
                 num++;
@@ -206,10 +304,11 @@ namespace PanasonicClassLibrary.Services
 
         }
 
-        private double GetMaxDataWhenDataNull(IXLWorksheet worksheet, int currentNum, string letterWithData, string letterWithOutTemp, int currentOutTemp )
+        private double GetMaxDataWhenDataNull(IXLWorksheet worksheet, int currentNum, string letterWithData, string letterWithOutTemp, int currentOutTemp)
         {
-            var lowDataString = worksheet.Cell(currentNum-1, letterWithData).Value.ToString();
-            var highDataString = worksheet.Cell(currentNum+1, letterWithData).Value.ToString();
+            var sheetName = worksheet.Name;
+            var lowDataString = worksheet.Cell(currentNum - 1, letterWithData).Value.ToString();
+            var highDataString = worksheet.Cell(currentNum + 1, letterWithData).Value.ToString();
             var lowOutTempString = worksheet.Cell(currentNum - 1, letterWithOutTemp).Value.ToString();
             var highOutTempString = worksheet.Cell(currentNum + 1, letterWithOutTemp).Value.ToString();
             if (lowDataString.Contains("Max") || lowDataString == "")
@@ -226,13 +325,21 @@ namespace PanasonicClassLibrary.Services
                 highOutTempString = lowOutTempString;
                 lowOutTempString = worksheet.Cell(currentNum - 2, letterWithOutTemp).Value.ToString();
             }
-             
-            double lowData = Convert.ToDouble(lowDataString);
-            double highData = Convert.ToDouble(highDataString);
-            int lowOutTemp = Convert.ToInt32(lowOutTempString);
-            int highOutTemp = Convert.ToInt32(highOutTempString);
-            return lowData + ((highData - lowData) /  (highOutTemp - lowOutTemp))*(currentOutTemp - lowOutTemp);
-            
+
+            // Wenn keine gültigen Nachbarn für Interpolation gefunden → 0 zurückgeben (TOL-Bereich ohne Leistungsdaten)
+            if (string.IsNullOrWhiteSpace(lowDataString) || string.IsNullOrWhiteSpace(highDataString) ||
+                string.IsNullOrWhiteSpace(lowOutTempString) || string.IsNullOrWhiteSpace(highOutTempString) ||
+                lowDataString == "-" || highDataString == "-")
+            {
+                return 0;
+            }
+
+            double lowData = SafeToDouble(lowDataString, sheetName, $"{letterWithData}{currentNum - 1}", $"Interpolation lowData für Außentemp {currentOutTemp}");
+            double highData = SafeToDouble(highDataString, sheetName, $"{letterWithData}{currentNum + 1}", $"Interpolation highData für Außentemp {currentOutTemp}");
+            int lowOutTemp = SafeToInt32(lowOutTempString, sheetName, $"{letterWithOutTemp}{currentNum - 1}", $"Interpolation lowOutTemp für Außentemp {currentOutTemp}");
+            int highOutTemp = SafeToInt32(highOutTempString, sheetName, $"{letterWithOutTemp}{currentNum + 1}", $"Interpolation highOutTemp für Außentemp {currentOutTemp}");
+            return lowData + ((highData - lowData) / (highOutTemp - lowOutTemp)) * (currentOutTemp - lowOutTemp);
+
 
         }
 
@@ -248,7 +355,7 @@ namespace PanasonicClassLibrary.Services
                     int minKey = oldPump.Data
                                 .Where(pair => pair.Value.Any(data => data.Temp == forTemp))
                                 .Select(pair => pair.Key)
-                                .DefaultIfEmpty() // Возвращаем значение по умолчанию (0), если нет удовлетворяющего ключа
+                                .DefaultIfEmpty()
                                 .Min();
                     if (!outTemps.Contains(minKey))
                     {

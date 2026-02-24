@@ -36,11 +36,12 @@ namespace PanasonicClassLibrary
                     case "1":
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         Console.WriteLine("Write full path to Excel File for Panasonicl (Luft):");
-                        excelFilePath = "E:\\Work\\wpoExcelToDBConveter\\TestExel\\Panasonic\\PanasonicNewPumps08_24.xlsx"; //Console.ReadLine();
+                        //excelFilePath = "E:\\Work\\wpoExcelToDBConveter\\TestExel\\Panasonic\\PanasonicNewPumps08_24.xlsx"; 
+                        excelFilePath = Console.ReadLine();
                         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         await LuftLogic(excelFilePath);
 
-                        break;                   
+                        break;
                     case "2":
                         exit = false;
                         break; // Go back to company selection
@@ -86,7 +87,7 @@ namespace PanasonicClassLibrary
             var _pumpServiceForPanasonic = new PumpServicePanasonic(excelFilePath);
             var standartPumpsForPanasonic = _pumpServiceForPanasonic.CreateListStandartPumps();
             var oldPumpsForPanasonic = _pumpServiceForPanasonic.GetAllPumpsFromExel();
-           
+
             int[] outTempMidFor35 = { -10, -7, 2, 7, 12 };
 
             int[] inTempMidFor35 = { 35, 34, 30, 27, 24 };
@@ -96,10 +97,10 @@ namespace PanasonicClassLibrary
             int[] inTempMidFor55 = { 55, 52, 42, 36, 30 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempMidFor55, inTempMidFor55, 55, "2");
 
-            int[] outTempColdFor35 = { -22,-15, -7, 2, 7, 12 };
+            int[] outTempColdFor35 = { -22, -15, -7, 2, 7, 12 };
             int[] inTempColdFor35 = { 35, 35, 30, 27, 25, 24 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempColdFor35, inTempColdFor35, 35, "1");
-            int[] outTempColdFor55 = { -22,-15, -7, 2, 7, 12 };
+            int[] outTempColdFor55 = { -22, -15, -7, 2, 7, 12 };
             int[] inTempMidCold55 = { 55, 55, 44, 37, 32, 30 };
             _pumpServiceForPanasonic.GetDataInListStandartPumpsForLuftPanasonic(standartPumpsForPanasonic, oldPumpsForPanasonic, outTempColdFor55, inTempMidCold55, 55, "1");
             int[] outTempWarmFor35 = { -7, 2, 2, 7, 12 };
@@ -111,9 +112,102 @@ namespace PanasonicClassLibrary
 
             await ChooseWhatUpdate(standartPumpsForPanasonic, oldPumpsForPanasonic, "Luft");
         }
-        
+
+        // =====================================================
+        // WHITELIST: Nur diese WPs importieren (aus PAD-Liste kopieren)
+        // Format: Einfach aus Excel kopieren, eine WP pro Zeile
+        // Wenn leer ("") → alle WPs werden importiert
+        // =====================================================
+        private static readonly string _whitelistRaw = @"
+WH-ADC0509L3E51 + WH-WDG05LE5
+WH-ADC0509L3E51 + WH-WDG07LE5
+WH-ADC0509L3E51 + WH-WDG09LE5
+WH-ADC0509L3E5UK1 + WH-WDG05LE5
+WH-ADC0509L3E5UK1 + WH-WDG07LE5
+WH-ADC0509L3E5UK1 + WH-WDG09LE5
+WH-ADC16K6E5 + WH-UDZ16KE5
+WH-ADC16K6E5UK + WH-UDZ16KE5
+WH-ADC16K6E5AN + WH-UDZ16KE5
+WH-SDC16K6E5 + WH-UDZ16KE5
+WH-ADC0916M3E51 + WH-WDG12ME5
+WH-ADC0916M3E51 + WH-WDG16ME5
+WH-ADC0916M3E5UK1 + WH-WDG12ME5
+WH-ADC0916M3E5UK1 + WH-WDG16ME5
+WH-ADC0316M9E81 + WH-WXG09ME8
+WH-ADC0316M9E81 + WH-WXG12ME8
+WH-ADC0316M9E81 + WH-WXG16ME8
+WH-ADC0916M3E51 + WH-WXG09ME5
+WH-ADC0916M3E51 + WH-WXG12ME5
+WH-ADC0916M3E5UK1 + WH-WXG09ME5
+WH-ADC0916M3E5UK1 + WH-WXG12ME5
+WH-ADC16K6E53 + WH-UDZ16KE5
+WH-ADC16K6E5AN3 + WH-UDZ16KE5
+WH-ADC16K6E5UK3 + WH-UDZ16KE5
+WH-ADC0916M3E52 + WH-WDG12ME5
+WH-ADC0916M3E52 + WH-WDG16ME5
+WH-ADC0916M3E5UK2 + WH-WDG12ME5
+WH-ADC0916M3E5UK2 + WH-WDG16ME5
+WH-ADC0916M3E5AN2 + WH-WDG12ME5
+WH-ADC0916M3E5AN2 + WH-WDG16ME5
+WH-ADC0916M6E52 + WH-WDG12ME5
+WH-ADC0916M6E52 + WH-WDG16ME5
+WH-ADC0916M3E53 + WH-WDG12ME5
+WH-ADC0916M3E53 + WH-WDG16ME5
+WH-ADC0916M3E5UK3 + WH-WDG12ME5
+WH-ADC0916M3E5UK3 + WH-WDG16ME5
+WH-ADC0916M3E5AN3 + WH-WDG12ME5
+WH-ADC0916M3E5AN3 + WH-WDG16ME5
+WH-ADC0916M6E53 + WH-WDG12ME5
+WH-ADC0916M6E53 + WH-WDG16ME5
+WH-SDC0916M3E5 + WH-WDG12ME5
+WH-SDC0916M3E5 + WH-WDG16ME5
+WH-SDC0916M6E5 + WH-WDG12ME5
+WH-SDC0916M6E5 + WH-WDG16ME5
+WH-WDG12ME5
+WH-WDG16ME5
+WH-WDG12ME5 + WH-CME5
+WH-WDG16ME5 + WH-CME5
+";
+
+        private static string NormalizeSpaces(string s)
+        {
+            // Normalize whitespace and ensure " + " format (handles "+" without spaces)
+            var result = System.Text.RegularExpressions.Regex.Replace(s.Trim(), @"\s+", " ");
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"\s*\+\s*", " + ");
+            return result;
+        }
+
+        private static HashSet<string> GetWhitelist()
+        {
+            if (string.IsNullOrWhiteSpace(_whitelistRaw))
+                return null; // null = kein Filter, alle importieren
+
+            return new HashSet<string>(
+                _whitelistRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(line => NormalizeSpaces(line))
+                    .Where(line => !string.IsNullOrEmpty(line)),
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+
+        private static bool IsInWhitelist(string pumpName, HashSet<string> whitelist)
+        {
+            if (whitelist == null) return true; // kein Filter
+            return whitelist.Contains(NormalizeSpaces(pumpName));
+        }
+
         private async Task ChooseWhatUpdate(List<StandartPump> standartPumps, List<Pump> oldPumps, string typePump)
         {
+            var whitelist = GetWhitelist();
+            if (whitelist != null)
+            {
+                Console.WriteLine($"\nWHITELIST aktiv: {whitelist.Count} WPs zum Import freigegeben.");
+            }
+            else
+            {
+                Console.WriteLine("\nKein Whitelist-Filter, alle WPs werden importiert.");
+            }
+
             bool exit = true;
             while (exit)
             {
@@ -126,17 +220,42 @@ namespace PanasonicClassLibrary
                 switch (operationForAlpha)
                 {
                     case "1":
+                        int count14825 = 0, skip14825 = 0;
                         foreach (var pump in standartPumps)
                         {
+                            if (!IsInWhitelist(pump.Name, whitelist))
+                            {
+                                Console.WriteLine($"Pump: {pump.Name} übersprungen (nicht in Whitelist).");
+                                skip14825++;
+                                continue;
+                            }
                             await _pumpDBServiceForPanasonic.ChangeDataenEN14825LGInDbByExcelData(pump, typePump, ID_Company_In_DB, Num_Climate);
+                            count14825++;
                         }
+                        Console.WriteLine($"\n14825: {count14825} importiert, {skip14825} übersprungen (nicht in Whitelist).");
                         break;
                     case "2":
+                        int countLst = 0, skipLst = 0;
                         foreach (var pump in oldPumps)
                         {
-                            await _pumpDBServiceForPanasonic.ChangeLeistungsdatenInDbByExcelData(pump, typePump, ID_Company_In_DB);
-                            Console.WriteLine("OK!");
+                            if (!IsInWhitelist(pump.Name, whitelist))
+                            {
+                                skipLst++;
+                                continue;
+                            }
+                            try
+                            {
+                                await _pumpDBServiceForPanasonic.ChangeLeistungsdatenInDbByExcelData(pump, typePump, ID_Company_In_DB);
+                                Console.WriteLine("OK!");
+                                countLst++;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"ERROR bei Pump '{pump.Name}': {ex.Message}");
+                                Console.WriteLine("Pump übersprungen, fahre fort...");
+                            }
                         }
+                        Console.WriteLine($"\nLeistungsdaten: {countLst} importiert, {skipLst} übersprungen (nicht in Whitelist).");
                         break;
                     case "3":
                         exit = false;
