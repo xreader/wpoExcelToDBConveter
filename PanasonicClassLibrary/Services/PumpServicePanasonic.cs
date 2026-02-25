@@ -215,6 +215,27 @@ namespace PanasonicClassLibrary.Services
                 var maxCOP = _sheet.Cell(num, maxCOPLetter).Value.ToString();
 
                 var maxVLString = _sheet.Cell("M" + num).GetString();
+
+                // Read BAFA COP from column Y for temps -7, 2, 7
+                if (outTemp == -7 || outTemp == 2 || outTemp == 7)
+                {
+                    var bafaCell = _sheet.Cell(num, 25); // Column Y = 25
+                    if (bafaCell != null && !bafaCell.IsEmpty())
+                    {
+                        try
+                        {
+                            var bafaStr = bafaCell.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            if (double.TryParse(bafaStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double bafaCop) && bafaCop > 0 && bafaCop < 20)
+                            {
+                                if (pump.BafaCOPs == null)
+                                    pump.BafaCOPs = new Dictionary<int, double>();
+                                pump.BafaCOPs[outTemp] = bafaCop;
+                            }
+                        }
+                        catch { /* skip if value cannot be read */ }
+                    }
+                }
+
                 var dataPump = new DataPump()
                 {
                     MaxVorlauftemperatur = string.IsNullOrWhiteSpace(maxVLString) ? 0 : SafeToInt32(maxVLString, sheetName, "M" + num, "Max. Vorlauftemperatur (35°C Block)"),

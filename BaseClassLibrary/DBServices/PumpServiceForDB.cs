@@ -260,6 +260,9 @@ namespace TestExel.ServicesForDB
 
                 // Update backup heater properties (1031 and 1258)
                 await UpdateBackupHeater(wpId, pump.BackupHeaterKW);
+
+                // Update BAFA COPs (1204, 1205, 1650)
+                await UpdateBafaCOPs(wpId, pump.BafaCOPs);
             }
 
         }
@@ -290,6 +293,54 @@ namespace TestExel.ServicesForDB
             catch (Exception ex)
             {
                 Console.WriteLine($"  Heizstab-Update für Node {wpId} fehlgeschlagen: {ex.Message}");
+            }
+        }
+
+        // Update BAFA COPs: 1204 (-7°C), 1205 (2°C), 1650 (7°C) - value_as_int = Round(COP * 100)
+        protected async Task UpdateBafaCOPs(int wpId, Dictionary<int, double> bafaCOPs)
+        {
+            if (bafaCOPs == null || bafaCOPs.Count == 0) return;
+
+            // Mapping: outdoor temp -> property ID
+            var tempToProperty = new Dictionary<int, int>
+            {
+                { -7, 1204 },
+                {  2, 1205 },
+                {  7, 1650 }
+            };
+
+            try
+            {
+                foreach (var mapping in tempToProperty)
+                {
+                    if (bafaCOPs.TryGetValue(mapping.Key, out double copValue) && copValue > 0)
+                    {
+                        int intValue = (int)Math.Round(copValue * 100);
+                        var leave = await _leaveRepository.FindLeaveByNodeIdAndPropertyId(wpId, mapping.Value);
+                        if (leave != null)
+                        {
+                            leave.value_as_int = intValue;
+                            await _leaveRepository.UpdateLeaves(leave);
+                        }
+                        else
+                        {
+                            // Create new leave if it doesn't exist
+                            var newLeave = new Leave()
+                            {
+                                objectid_fk_properties_objectid = mapping.Value,
+                                nodeid_fk_nodes_nodeid = wpId,
+                                value = "",
+                                value_as_int = intValue
+                            };
+                            await _leaveRepository.CreateLeave(newLeave);
+                        }
+                    }
+                }
+                Console.WriteLine($"  BAFA COPs gesetzt: {string.Join(", ", bafaCOPs.Select(x => $"A{x.Key}={Math.Round(x.Value * 100)}"))}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  BAFA COP-Update für Node {wpId} fehlgeschlagen: {ex.Message}");
             }
         }
 

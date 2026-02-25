@@ -12,6 +12,7 @@ namespace TestExel.Models
         public string Name { get; set; }
         public Dictionary<int, List<DataPump>> Data { get; set; }
         public double BackupHeaterKW { get; set; } // Capacity of backup heater in kW (from column X)
+        public Dictionary<int, double> BafaCOPs { get; set; } // BAFA COPs by outdoor temp: -7, 2, 7 (from column Y)
 
         protected IXLWorksheet _sheet;
         public Pump(IXLWorksheet sheet)
