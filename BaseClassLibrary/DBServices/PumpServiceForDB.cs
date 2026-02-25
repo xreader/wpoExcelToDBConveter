@@ -263,6 +263,9 @@ namespace TestExel.ServicesForDB
 
                 // Update BAFA COPs (1204, 1205, 1650)
                 await UpdateBafaCOPs(wpId, pump.BafaCOPs);
+
+                // Update cooling data (1357, 1639, 1640, 1735, 1733, 1736, 1734)
+                await UpdateCoolingData(wpId, pump.CoolingCapacity, pump.CoolingEER);
             }
 
         }
@@ -316,24 +319,7 @@ namespace TestExel.ServicesForDB
                     if (bafaCOPs.TryGetValue(mapping.Key, out double copValue) && copValue > 0)
                     {
                         int intValue = (int)Math.Round(copValue * 100);
-                        var leave = await _leaveRepository.FindLeaveByNodeIdAndPropertyId(wpId, mapping.Value);
-                        if (leave != null)
-                        {
-                            leave.value_as_int = intValue;
-                            await _leaveRepository.UpdateLeaves(leave);
-                        }
-                        else
-                        {
-                            // Create new leave if it doesn't exist
-                            var newLeave = new Leave()
-                            {
-                                objectid_fk_properties_objectid = mapping.Value,
-                                nodeid_fk_nodes_nodeid = wpId,
-                                value = "",
-                                value_as_int = intValue
-                            };
-                            await _leaveRepository.CreateLeave(newLeave);
-                        }
+                        await SetLeaveValue(wpId, mapping.Value, intValue);
                     }
                 }
                 Console.WriteLine($"  BAFA COPs gesetzt: {string.Join(", ", bafaCOPs.Select(x => $"A{x.Key}={Math.Round(x.Value * 100)}"))}");
@@ -341,6 +327,68 @@ namespace TestExel.ServicesForDB
             catch (Exception ex)
             {
                 Console.WriteLine($"  BAFA COP-Update für Node {wpId} fehlgeschlagen: {ex.Message}");
+            }
+        }
+
+        // Update cooling data properties
+        // 1357 = Kühlung ja/nein (1), 
+        // 1639 = Kühlleistung 7°C (×10), 1640 = EER 7°C (×100)
+        // 1735 = Kühlleistung 14°C (×10), 1733 = EER 14°C (×100)
+        // 1736 = Kühlleistung 18°C (×10), 1734 = EER 18°C (×100)
+        protected async Task UpdateCoolingData(int wpId, Dictionary<int, double> coolingCapacity, Dictionary<int, double> coolingEER)
+        {
+            if (coolingCapacity == null || coolingCapacity.Count == 0) return;
+
+            try
+            {
+                // Set 1357 = 1 (Kühlung ja)
+                await SetLeaveValue(wpId, 1357, 1);
+
+                // 7°C
+                if (coolingCapacity.TryGetValue(7, out double cap7) && cap7 > 0)
+                    await SetLeaveValue(wpId, 1639, (int)Math.Round(cap7 * 10));
+                if (coolingEER != null && coolingEER.TryGetValue(7, out double eer7) && eer7 > 0)
+                    await SetLeaveValue(wpId, 1640, (int)Math.Round(eer7 * 100));
+
+                // 14°C
+                if (coolingCapacity.TryGetValue(14, out double cap14) && cap14 > 0)
+                    await SetLeaveValue(wpId, 1735, (int)Math.Round(cap14 * 10));
+                if (coolingEER != null && coolingEER.TryGetValue(14, out double eer14) && eer14 > 0)
+                    await SetLeaveValue(wpId, 1733, (int)Math.Round(eer14 * 100));
+
+                // 18°C
+                if (coolingCapacity.TryGetValue(18, out double cap18) && cap18 > 0)
+                    await SetLeaveValue(wpId, 1736, (int)Math.Round(cap18 * 10));
+                if (coolingEER != null && coolingEER.TryGetValue(18, out double eer18) && eer18 > 0)
+                    await SetLeaveValue(wpId, 1734, (int)Math.Round(eer18 * 100));
+
+                Console.WriteLine($"  Kühldaten: 7°C={cap7}kW, 14°C={(coolingCapacity.TryGetValue(14, out var c14) ? c14 : 0)}kW, 18°C={(coolingCapacity.TryGetValue(18, out var c18) ? c18 : 0)}kW");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  Kühldaten-Update für Node {wpId} fehlgeschlagen: {ex.Message}");
+            }
+        }
+
+        // Helper: Update or create a leave with a specific value
+        private async Task SetLeaveValue(int wpId, int propertyId, int value)
+        {
+            var leave = await _leaveRepository.FindLeaveByNodeIdAndPropertyId(wpId, propertyId);
+            if (leave != null)
+            {
+                leave.value_as_int = value;
+                await _leaveRepository.UpdateLeaves(leave);
+            }
+            else
+            {
+                var newLeave = new Leave()
+                {
+                    objectid_fk_properties_objectid = propertyId,
+                    nodeid_fk_nodes_nodeid = wpId,
+                    value = "",
+                    value_as_int = value
+                };
+                await _leaveRepository.CreateLeave(newLeave);
             }
         }
 

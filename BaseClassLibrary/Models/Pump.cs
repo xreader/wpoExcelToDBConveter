@@ -14,6 +14,10 @@ namespace TestExel.Models
         public double BackupHeaterKW { get; set; } // Capacity of backup heater in kW (from column X)
         public Dictionary<int, double> BafaCOPs { get; set; } // BAFA COPs by outdoor temp: -7, 2, 7 (from column Y)
 
+        // Cooling data from columns AE-AH: key = indoor temp (7, 14, 18)
+        public Dictionary<int, double> CoolingCapacity { get; set; } // AF: Cooling capacity in kW
+        public Dictionary<int, double> CoolingEER { get; set; }      // AH: EER
+
         protected IXLWorksheet _sheet;
         public Pump(IXLWorksheet sheet)
         {

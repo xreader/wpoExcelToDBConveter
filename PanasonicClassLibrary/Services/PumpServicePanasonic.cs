@@ -99,6 +99,10 @@ namespace PanasonicClassLibrary.Services
                                 pump.BackupHeaterKW = heaterKW;
                         }
 
+                        // Read cooling data from columns AE(31), AF(32), AH(34)
+                        // 7°C is in nameRow, 14°C and 18°C are in subsequent rows with AE values
+                        ReadCoolingData(worksheet, nameRow, pump);
+
                         GetData35ForPump(worksheet, firstCellWithOutTemp, pump);
                         GetData55ForPump(worksheet, firstCellWithOutTemp, pump);
                         if (pump != null && pump.Name != "")
@@ -188,6 +192,51 @@ namespace PanasonicClassLibrary.Services
 
             return namePump;
         }
+        private void ReadCoolingData(IXLWorksheet sheet, int nameRow, Pump pump)
+        {
+            try
+            {
+                // Cooling data: AE(31)=indoor temp label, AF(32)=capacity, AH(34)=EER
+                // Scan nameRow and next 5 rows for AE values like "7 °C", "14 °C", "18 °C"
+                for (int r = nameRow; r <= nameRow + 5; r++)
+                {
+                    var aeCell = sheet.Cell(r, 31); // AE
+                    if (aeCell == null || aeCell.IsEmpty()) continue;
+
+                    var aeStr = aeCell.GetString().Trim().Replace("°C", "").Replace("°c", "").Trim();
+                    if (!int.TryParse(aeStr, out int indoorTemp)) continue;
+                    if (indoorTemp != 7 && indoorTemp != 14 && indoorTemp != 18) continue;
+
+                    // AF = Cooling capacity (kW)
+                    try
+                    {
+                        var afVal = sheet.Cell(r, 32).GetDouble();
+                        if (afVal > 0)
+                        {
+                            if (pump.CoolingCapacity == null)
+                                pump.CoolingCapacity = new Dictionary<int, double>();
+                            pump.CoolingCapacity[indoorTemp] = afVal;
+                        }
+                    }
+                    catch { }
+
+                    // AH = EER
+                    try
+                    {
+                        var ahVal = sheet.Cell(r, 34).GetDouble();
+                        if (ahVal > 0)
+                        {
+                            if (pump.CoolingEER == null)
+                                pump.CoolingEER = new Dictionary<int, double>();
+                            pump.CoolingEER[indoorTemp] = ahVal;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { /* skip if cooling data cannot be read */ }
+        }
+
         private void GetData35ForPump(IXLWorksheet _sheet, Cell cellWithOutTemp, Pump pump)
         {
             if (pump.Data == null)
