@@ -11,6 +11,7 @@ namespace TestExel.Models
     {
         public string Name { get; set; }
         public Dictionary<int, List<DataPump>> Data { get; set; }
+        public double BackupHeaterKW { get; set; } // Capacity of backup heater in kW (from column X)
 
         protected IXLWorksheet _sheet;
         public Pump(IXLWorksheet sheet)

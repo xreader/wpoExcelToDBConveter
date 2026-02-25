@@ -47,11 +47,11 @@ namespace TestExel.ServicesForDB
                     var leavesIdWithOldDataList = await _nodeRepository.GetIdLeavesWithDataByPumpId(wpId);//list of IdLeaves that need to be changed
                     if (leavesIdWithOldDataList.Count > 0)
                     {
-                        
+
                         foreach (var idLeave in leavesIdWithOldDataList)
                         {
                             var leaves = await _leaveRepository.GetLeavesById(idLeave);
-                            foreach(var leave in leaves)
+                            foreach (var leave in leaves)
                             {
                                 await _leaveRepository.DeleteLeave(leave);
                             }
@@ -141,7 +141,7 @@ namespace TestExel.ServicesForDB
                                             var WPleistCOP = dataWp.FirstOrDefault(x => x.objectid_fk_properties_objectid == 1221);  //leave with data for COP
                                             if (WPleistHeiz != null && WPleistCOP != null)
                                             { //Changing data for P and COP
-                                                
+
                                                 UnregulatedChangeDataForSendToDB(WPleistHeiz, WPleistCOP, dataPumpForThisData);
                                                 await _leaveRepository.UpdateLeaves(WPleistHeiz);
                                                 await _leaveRepository.UpdateLeaves(WPleistCOP);
@@ -212,21 +212,21 @@ namespace TestExel.ServicesForDB
                         //If there are such records, we simply update them and delete duplicates
                         if (listWithLeistungDaten.Count > 0)
                         {
-                           foreach(var leavesForDelete in listWithLeistungDaten)
-                           {
-                                foreach(var leaveForDelete in leavesForDelete)
+                            foreach (var leavesForDelete in listWithLeistungDaten)
+                            {
+                                foreach (var leaveForDelete in leavesForDelete)
                                     await _leaveRepository.DeleteLeave(leaveForDelete);
-                           }
+                            }
 
-                           foreach(var idNodeForDelete in leavesIdWithOldLeistungdatenList)
-                           {
+                            foreach (var idNodeForDelete in leavesIdWithOldLeistungdatenList)
+                            {
                                 var nodeForDelete = await _nodeRepository.GetNodeByIdAsync(idNodeForDelete);
                                 if (nodeForDelete != null)
                                     await _nodeRepository.DeleteNode(nodeForDelete);
-                           }
+                            }
 
                         }
-                        if(newData.MaxCOP > 0 && newData.MaxHC > 0)
+                        if (newData.MaxCOP > 0 && newData.MaxHC > 0)
                         {
                             //Create a linking record
                             Node node = new Node() { typeid_fk_types_typeid = 8, parentid_fk_nodes_nodeid = wpId, licence = 0 };
@@ -248,7 +248,7 @@ namespace TestExel.ServicesForDB
                                 await _leaveRepository.CreateLeave(leave);
                             }
                         }
-                        
+
                     }
 
 
@@ -257,9 +257,42 @@ namespace TestExel.ServicesForDB
 
 
                 Console.WriteLine("Pump -" + wp.value + " Leistungdata Update!");
+
+                // Update backup heater properties (1031 and 1258)
+                await UpdateBackupHeater(wpId, pump.BackupHeaterKW);
             }
 
         }
+
+        // Update Heizstab properties: 1031 (hat Heizstab j/n) and 1258 (Leistung in kW)
+        protected async Task UpdateBackupHeater(int wpId, double backupHeaterKW)
+        {
+            try
+            {
+                // Find only the specific leaves for 1031 and 1258
+                var leave1031 = await _leaveRepository.FindLeaveByNodeIdAndPropertyId(wpId, 1031);
+                if (leave1031 != null)
+                {
+                    leave1031.value_as_int = backupHeaterKW > 0 ? 1 : 0;
+                    await _leaveRepository.UpdateLeaves(leave1031);
+                }
+
+                var leave1258 = await _leaveRepository.FindLeaveByNodeIdAndPropertyId(wpId, 1258);
+                if (leave1258 != null)
+                {
+                    leave1258.value_as_int = (int)Math.Round(backupHeaterKW * 10);
+                    await _leaveRepository.UpdateLeaves(leave1258);
+                }
+
+                if (backupHeaterKW > 0)
+                    Console.WriteLine($"  Heizstab: {backupHeaterKW} kW gesetzt.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  Heizstab-Update für Node {wpId} fehlgeschlagen: {ex.Message}");
+            }
+        }
+
         //Update/Create in DB this data  Leistung
         public virtual async Task UnregulatedChangeLeistungsdatenInDbByExcelData(UnregulatedPump pump, string typePump, int idCompany)
         {
@@ -275,17 +308,17 @@ namespace TestExel.ServicesForDB
                 //We sort through the data we received from Excel
                 foreach (var newDataDictionary in pump.Data)
                 {
-                    if(newDataDictionary.Value.Count == 1)
+                    if (newDataDictionary.Value.Count == 1)
                     {
                         var data = pump.Data.FirstOrDefault(x => x.Value.Count == 2);
                         var oneData = newDataDictionary.Value[0];
-                        var dataWichEqualsTempOneData = data.Value.FirstOrDefault(x=>x.Temp == oneData.Temp);
+                        var dataWichEqualsTempOneData = data.Value.FirstOrDefault(x => x.Temp == oneData.Temp);
                         var NOdataWichEqualsTempOneData = data.Value.FirstOrDefault(x => x.Temp != oneData.Temp);
                         newDataDictionary.Value.Add(new UnregulatedDataPump()
                         {
                             Temp = NOdataWichEqualsTempOneData.Temp,
-                            HC = Math.Round(oneData.HC * NOdataWichEqualsTempOneData.HC / dataWichEqualsTempOneData.HC,2),
-                            COP = Math.Round(oneData.COP * NOdataWichEqualsTempOneData.COP / dataWichEqualsTempOneData.COP,2),
+                            HC = Math.Round(oneData.HC * NOdataWichEqualsTempOneData.HC / dataWichEqualsTempOneData.HC, 2),
+                            COP = Math.Round(oneData.COP * NOdataWichEqualsTempOneData.COP / dataWichEqualsTempOneData.COP, 2),
                             MaxVorlauftemperatur = NOdataWichEqualsTempOneData.MaxVorlauftemperatur
                         });
                     }
@@ -355,19 +388,19 @@ namespace TestExel.ServicesForDB
             int[] midClimate = { -15, -10, -7, 2, 7, 12 };
             int[] warmClimate = { -7, 2, 2, 7, 12 };
 
-            bool correctOutTemp = typeClimat == 1 && dataDictionary.Count > 6 ? true 
+            bool correctOutTemp = typeClimat == 1 && dataDictionary.Count > 6 ? true
                                      : typeClimat == 2 && dataDictionary.Count > 5 ? true
                                      : typeClimat == 3 && dataDictionary.Count > 4 ? true : false;
-            
+
             int minKey = dataDictionary.Keys.Min();
             string bigHash = "";
             int forTemp = dataDictionary.Values.First().First().ForTemp;
             foreach (var data in dataDictionary)
             {
-                
+
                 foreach (var dataValue in data.Value)
                 {
-                    
+
                     bigHash += (dataValue.MinHC == 0 && dataValue.MinCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MinHC, dataValue.MinCOP);
                     bigHash += (dataValue.MidHC == 0 && dataValue.MidCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MidHC, dataValue.MidCOP);
                     bigHash += (dataValue.MaxHC == 0 && dataValue.MaxCOP == 0) ? (data.Key + "#") : await Create14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.MaxHC, dataValue.MaxCOP);
@@ -376,7 +409,7 @@ namespace TestExel.ServicesForDB
                         int correctOutTempCount = typeClimat == 1 ? 6 - dataDictionary.Count
                                      : typeClimat == 2 ? 5 - dataDictionary.Count
                                      : typeClimat == 3 ? 4 - dataDictionary.Count : 0;
-                        for(int i = 0; i< correctOutTempCount; i++)
+                        for (int i = 0; i < correctOutTempCount; i++)
                         {
                             var minKeyForAddWhenNotHaveNumber = typeClimat == 1 ? coldClimate.Where(x => x < minKey).DefaultIfEmpty(int.MinValue).Max()
                                                : typeClimat == 2 ? midClimate.Where(x => x < minKey).DefaultIfEmpty(int.MinValue).Max()
@@ -433,15 +466,15 @@ namespace TestExel.ServicesForDB
         }
         protected virtual async Task UnregulatedCreateNew14825Data(Dictionary<int, List<UnregulatedStandartDataPump>> dataDictionary, int typeClimat, int wpId)
         {
-           
+
             int forTemp = dataDictionary.Values.First().First().ForTemp;
             foreach (var data in dataDictionary)
             {
                 foreach (var dataValue in data.Value)
                 {
-                    await UnregulatedCreate14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.HC, dataValue.COP);                   
+                    await UnregulatedCreate14825ForSelectedData(wpId, data.Key, typeClimat, dataValue.ForTemp, dataValue.HC, dataValue.COP);
                 }
-            }            
+            }
         }
 
         protected async Task<string> Create14825ForSelectedData(int wpId, int tempOut, int typeClimat, int forTemp, double HC, double COP)
@@ -498,7 +531,7 @@ namespace TestExel.ServicesForDB
             foreach (var leave in leavesForCreate)
             {
                 await _leaveRepository.CreateLeave(leave);
-            }            
+            }
         }
 
         //Method for updating a long hash and switching to a different climate and temperature
@@ -537,11 +570,11 @@ namespace TestExel.ServicesForDB
                 case 35:
                     return typeClimat == 1 ? await _leaveRepository.GetBigHashFor35GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
                          : typeClimat == 2 ? await _leaveRepository.GetBigHashFor35GradForMittelKlimaByWpId(wpId)
-                         :                   await _leaveRepository.GetBigHashFor35GradForWarmKlimaByWpId(wpId);  //if the climate is average
+                         : await _leaveRepository.GetBigHashFor35GradForWarmKlimaByWpId(wpId);  //if the climate is average
                 case 55:
                     return typeClimat == 1 ? await _leaveRepository.GetBigHashFor55GradForKaltesKlimaByWpId(wpId)   //if the climate is cold
                          : typeClimat == 2 ? await _leaveRepository.GetBigHashFor55GradForMittelKlimaByWpId(wpId)
-                         :                   await _leaveRepository.GetBigHashFor55GradForWarmKlimaByWpId(wpId);  //if the climate is average
+                         : await _leaveRepository.GetBigHashFor55GradForWarmKlimaByWpId(wpId);  //if the climate is average
                 default:
                     return null;
             }
@@ -575,7 +608,7 @@ namespace TestExel.ServicesForDB
         protected virtual void UnregulatedChangeDataForSendToDB(Leave WPleistHeiz, Leave WPleistCOP, UnregulatedStandartDataPump dataPumpForThisData)
         {
             WPleistHeiz.value_as_int = (int)(dataPumpForThisData.HC * 100);
-            WPleistCOP.value_as_int = (int)(dataPumpForThisData.COP * 100);            
+            WPleistCOP.value_as_int = (int)(dataPumpForThisData.COP * 100);
         }
 
         //Method for hashing a string with a carry of 5 bits
@@ -605,10 +638,15 @@ namespace TestExel.ServicesForDB
             {
                 foreach (var textForWp in textForWpList)
                 {
-                    wpList.Add(await _leaveRepository.FindLeaveByTextId(textForWp.textid));
+                    var leave = await _leaveRepository.FindLeaveByTextId(textForWp.textid);
+                    if (leave != null)
+                    {
+                        wpList.Add(leave);
+                    }
                 }
             }
-            else
+            // If no leaves found via text, try direct name search
+            if (wpList.Count == 0)
             {
                 wpList = await _leaveRepository.FindLeaveByNamePump(pumpName);
             }
@@ -638,10 +676,15 @@ namespace TestExel.ServicesForDB
             {
                 foreach (var textForWp in textForWpList)
                 {
-                    wpList.Add(await _leaveRepository.FindLeaveByTextId(textForWp.textid));
+                    var leave = await _leaveRepository.FindLeaveByTextId(textForWp.textid);
+                    if (leave != null)
+                    {
+                        wpList.Add(leave);
+                    }
                 }
             }
-            else
+            // If no leaves found via text, try direct name search
+            if (wpList.Count == 0)
             {
                 wpList = await _leaveRepository.FindLeaveByNamePump(pumpName);
             }
@@ -662,7 +705,7 @@ namespace TestExel.ServicesForDB
             }
             return wpList;
         }
-        
+
         //Creation of different types of pumps
         protected async Task<Leave> CreateNewPumpLuft(string namePump, int idCompany)
         {

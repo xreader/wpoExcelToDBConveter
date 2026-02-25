@@ -95,7 +95,7 @@ namespace PanasonicClassLibrary.Services
                         if (heaterCell != null && !heaterCell.IsEmpty())
                         {
                             var heaterStr = heaterCell.GetString();
-                            if (int.TryParse(heaterStr, out int heaterKW))
+                            if (double.TryParse(heaterStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double heaterKW))
                                 pump.BackupHeaterKW = heaterKW;
                         }
 

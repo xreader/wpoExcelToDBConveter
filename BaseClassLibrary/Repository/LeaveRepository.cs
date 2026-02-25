@@ -31,8 +31,8 @@ namespace TestExel.Repository
         }
         public async Task<Leave> FindLeaveByTextId(int textId) => await _context.leaves.FirstOrDefaultAsync(x => x.value_as_int == textId && x.objectid_fk_properties_objectid == 1320);
 
-        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => (x.value == pumpName || x.value.Contains(pumpName + "+")) && (x.objectid_fk_properties_objectid== 1320 || x.objectid_fk_properties_objectid == 1006)).ToListAsync();
-        public async Task<int> GetCountLeavesById(int id) => await _context.leaves.CountAsync(x => x.nodeid_fk_nodes_nodeid == id);  
+        public async Task<List<Leave>> FindLeaveByNamePump(string pumpName) => await _context.leaves.Where(x => (x.value == pumpName || x.value == "*" + pumpName || x.value == pumpName + " " || x.value == "*" + pumpName + " ") && (x.objectid_fk_properties_objectid == 1320 || x.objectid_fk_properties_objectid == 1006)).ToListAsync();
+        public async Task<int> GetCountLeavesById(int id) => await _context.leaves.CountAsync(x => x.nodeid_fk_nodes_nodeid == id);
         public async Task<List<Leave>> GetLeavesById(int id) => await _context.leaves.Where(x => x.nodeid_fk_nodes_nodeid == id).ToListAsync();
 
         public async Task<Leave> GetBigHashFor35GradForKaltesKlimaByWpId(int wpId) => await _context.leaves.FirstOrDefaultAsync(x => x.objectid_fk_properties_objectid == 1464 && x.nodeid_fk_nodes_nodeid == wpId);
@@ -49,14 +49,14 @@ namespace TestExel.Repository
         }
         public async Task<bool> DeleteLeaves(List<List<Leave>> leaves)
         {
-            foreach(var listLeaves in leaves)
+            foreach (var listLeaves in leaves)
             {
                 foreach (Leave leave in listLeaves)
                 {
                     _context.leaves.Remove(leave);
                 }
 
-            }            
+            }
             return await SaveAsync();
         }
         public async Task<bool> DeleteLeave(Leave leave)
@@ -64,6 +64,9 @@ namespace TestExel.Repository
             _context.Remove(leave);
             return await SaveAsync();
         }
+        public async Task<Leave> FindLeaveByNodeIdAndPropertyId(int nodeId, int propertyId)
+            => await _context.leaves.FirstOrDefaultAsync(x => x.nodeid_fk_nodes_nodeid == nodeId && x.objectid_fk_properties_objectid == propertyId);
+
         public async Task<bool> UpdateLeaves(Leave leaves)
         {
             _context.Update(leaves);

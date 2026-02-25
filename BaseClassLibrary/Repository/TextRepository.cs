@@ -22,7 +22,15 @@ namespace TestExel.Repository
         }
         public async Task<List<Text>> FindTextIdByGerName(string gerName)
         {
-            var text = await _context.texts.Where(x => x.ger == gerName || x.ger.Contains(gerName+"+")).ToListAsync();            
+            // Bessere Suche: Trimmen, Stern hinzufügen, mit/ohne Leerzeichen
+            var trimmed = gerName.Trim();
+            var withStar = "*" + trimmed;
+            var text = await _context.texts.Where(x =>
+                x.ger == trimmed
+                || x.ger == withStar
+                || x.ger == trimmed + " "
+                || x.ger == withStar + " "
+            ).ToListAsync();
             return text;
         }
 
